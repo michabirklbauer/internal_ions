@@ -1,0 +1,18 @@
+# Put your requirements here. E.g:
+numpy
+pandas
+pyteomics
+argparse
+pprintpp
+spectrum_utils
+psm_utils
+ms_deisotope
+openpyxl
+streamlit
+numba
+joblib
+tqdm
+stqdm
+matplotlib
+plotly
+logomaker
