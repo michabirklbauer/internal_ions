@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from fragannot_numba import FragannotNumba
+from .fragannot_numba import FragannotNumba
 
 import os
 import random
