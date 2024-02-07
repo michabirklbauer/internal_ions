@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-from fragannot_numba import FragannotNumba
+from .fragannot_numba import FragannotNumba
 
 import os
+import shutil
 import random
 from datetime import datetime
 from typing import Dict
@@ -18,7 +19,15 @@ def fragannot_call(spectrum_file: BinaryIO,
                    deisotope: bool,
                    file_format: str = "infer") -> Dict:
 
-    output_name_prefix = datetime.now().strftime("%b-%d-%Y_%H-%M-%S") + "_" + str(random.randint(10000, 99999))
+    tmp_dir_name = "tmp_fragannot_files_471625739"
+    if os.path.exists(tmp_dir_name) and os.path.isdir(tmp_dir_name):
+        shutil.rmtree(tmp_dir_name)
+        os.makedirs(tmp_dir_name)
+    else:
+        os.makedirs(tmp_dir_name)
+
+
+    output_name_prefix = tmp_dir_name + "/" + datetime.now().strftime("%b-%d-%Y_%H-%M-%S") + "_" + str(random.randint(10000, 99999))
 
     # write uploaded files to tmp directory
     with open(output_name_prefix + spectrum_file.name, "wb") as f1:
@@ -42,10 +51,10 @@ def fragannot_call(spectrum_file: BinaryIO,
     try:
         os.remove(output_name_prefix + spectrum_file.name)
     except Exception as e:
-        print("Could not remove file" + output_name_prefix + spectrum_file.name)
+        print("Could not remove file: " + output_name_prefix + spectrum_file.name)
     try:
         os.remove(output_name_prefix + identifications_file.name)
     except Exception as e:
-        print("Could not remove file" + output_name_prefix + identifications_file.name)
+        print("Could not remove file: " + output_name_prefix + identifications_file.name)
 
     return fragannot_dict
