@@ -13,6 +13,8 @@ import streamlit as st
 #import tabs
 from tab1 import main as tab1_main
 from tab2 import main as tab2_main
+from tab3 import main as tab3_main
+from tab4 import main as tab4_main
 
 # main page content
 def main_page():
@@ -26,7 +28,7 @@ def main_page():
     description = st.markdown(general_description)
 
     # set tab names here
-    tab1, tab2, tab3, tab4 = st.tabs(["Annotation", "Tab2", "Tab3", "Tab4"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Annotation", "Statistics", "Spectrum", "Tab4"])
 
     div = \
     """
@@ -62,7 +64,7 @@ def main_page():
     """
 
     with tab3:
-        header = st.subheader("header tab 3", divider = "rainbow")
+        tab3_main()
 
     div = \
     """
@@ -74,8 +76,7 @@ def main_page():
     """
 
     with tab4:
-        header = st.subheader("header tab 4", divider = "rainbow")
-
+        tab4_main()
 # side bar and main page loader
 def main(argv = None) -> None:
 
