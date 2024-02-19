@@ -77,6 +77,7 @@ def main_page():
 
     with tab4:
         tab4_main()
+        
 # side bar and main page loader
 def main(argv = None) -> None:
 
