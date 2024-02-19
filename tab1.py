@@ -12,9 +12,13 @@ from fragannot.fragannot_call import fragannot_call
 from util.converter import JSONConverter
 from util.redirect import st_stdout
 from util.constants import FRAGANNOT_ION_NAMES
+from util.spectrumio import read_spectra
+from util.psmio import read_identifications
 from util.streamlit_utils import dataframe_to_csv_stream
 
 def main(argv = None) -> None:
+
+    ############################################################################
     header = st.subheader("Data Import", divider = "rainbow")
 
     spectrum_file = st.file_uploader("Upload spectrum file:",
@@ -22,10 +26,16 @@ def main(argv = None) -> None:
                                      type = ["mgf"],
                                      help = "Upload a spectrum file to be analyzed in .mzml or .mgf format.")
 
+    if spectrum_file is not None:
+        st.session_state["spectra"] = read_spectra(spectrum_file, spectrum_file.name)
+
     identifications_file = st.file_uploader("Upload identification file:",
                                             key = "identifications_file",
                                             type = ["mzid"],
                                             help = "Upload a identification file that contains PSMs of the spectrum file in mzID format.")
+
+    if identifications_file is not None:
+        st.session_state["identifications"] = read_identifications(identifications_file, identifications_file.name)
 
     ttolerance = st.number_input("Tolerance in Da:",
                                  key = "tolerance",
@@ -101,6 +111,7 @@ def main(argv = None) -> None:
                                help = "Neutral losses to consider for fragment ions. Multiple entries should be delimited by commas!")
     st.session_state["losses"] = [loss.strip() for loss in losses_str.split(",")]
 
+    ############################################################################
     st.subheader("Annotation", divider = "rainbow")
 
     l1, l2, center_button, r1, r2 = st.columns(5)
@@ -144,6 +155,7 @@ def main(argv = None) -> None:
         else:
             res_status_1 = st.error("You need to specify a spectrum AND identifications file!")
 
+    ############################################################################
     if "dataframes" in st.session_state:
         results_preview_header = st.subheader("Results Preview", divider = "rainbow")
         preview_csv_1_desc = st.markdown("Fragment-centric")
