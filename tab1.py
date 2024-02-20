@@ -19,7 +19,11 @@ from util.streamlit_utils import dataframe_to_csv_stream
 def main(argv = None) -> None:
 
     ############################################################################
-    header = st.subheader("Data Import", divider = "rainbow")
+    header = st.subheader("Annotation Tab", divider = "rainbow")
+    tab1_desc = st.markdown("Description text of tab1.")
+
+    ############################################################################
+    data_import_tab1_header = st.subheader("Data Import", divider = "rainbow")
 
     spectrum_file = st.file_uploader("Upload spectrum file:",
                                      key = "spectrum_file",
@@ -78,7 +82,10 @@ def main(argv = None) -> None:
     with fragannot_ions_col3:
 
         fions_desc_text = st.markdown("Here are some common selections for HCD/ETD/ect")
-        fions_desc_table = st.table(pd.DataFrame({"Method": ["HCD", "ETD"], "Ions": ["b, y", "c, z"]}))
+        fions_desc_table = st.dataframe(pd.DataFrame({"Method": ["HCD", "ETD"],
+                                                      "Ions": ["b, y", "c, z"]}),
+                                        hide_index = True,
+                                        width = 500)
 
     st.session_state["fragannot_ion_selection"] = [st.session_state.fA_ion,
                                                    st.session_state.fB_ion,
@@ -144,6 +151,10 @@ def main(argv = None) -> None:
                             converter = JSONConverter()
                             st.session_state["result"] = result
                             st.session_state["dataframes"] = converter.to_dataframes(data = result)
+                            st.session_state["dataframes_source"] = {"spectrum_file": st.session_state.spectrum_file.name,
+                                                                     "identifications_file": st.session_state.identifications_file.name,
+                                                                     "fragment_centric_csv": None,
+                                                                     "spectrum_centric_csv": None}
                             status_1 = 0
                         except Exception as e:
                             this_e = st.exception(e)
