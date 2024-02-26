@@ -16,6 +16,14 @@ from util.spectrumio import read_spectra
 from util.psmio import read_identifications
 from util.streamlit_utils import dataframe_to_csv_stream
 
+def reset_spectra() -> None:
+    st.session_state["rerun_spectra_reading"] = True
+    st.rerun()
+
+def reset_identifications() -> None:
+    st.session_state["rerun_identifications_reading"] = True
+    st.rerun()
+
 def main(argv = None) -> None:
 
     ############################################################################
@@ -28,18 +36,32 @@ def main(argv = None) -> None:
     spectrum_file = st.file_uploader("Upload spectrum file:",
                                      key = "spectrum_file",
                                      type = ["mgf"],
+                                     on_change = reset_spectra,
                                      help = "Upload a spectrum file to be analyzed in .mzml or .mgf format.")
 
     if spectrum_file is not None:
-        st.session_state["spectra"] = read_spectra(spectrum_file, spectrum_file.name)
+        if "spectra" not in st.session_state:
+            st.session_state["spectra"] = read_spectra(spectrum_file, spectrum_file.name)
+            st.session_state["rerun_spectra_reading"] = False
+        if "spectra" in st.session_state:
+            if st.session_state["rerun_spectra_reading"]:
+                st.session_state["spectra"] = read_spectra(spectrum_file, spectrum_file.name)
+                st.session_state["rerun_spectra_reading"] = False
 
     identifications_file = st.file_uploader("Upload identification file:",
                                             key = "identifications_file",
                                             type = ["mzid"],
+                                            on_change = reset_identifications,
                                             help = "Upload a identification file that contains PSMs of the spectrum file in mzID format.")
 
     if identifications_file is not None:
-        st.session_state["identifications"] = read_identifications(identifications_file, identifications_file.name)
+        if "identifications" not in st.session_state:
+            st.session_state["identifications"] = read_identifications(identifications_file, identifications_file.name)
+            st.session_state["rerun_identifications_reading"] = False
+        if "identifications" in st.session_state:
+            if st.session_state["rerun_identifications_reading"]:
+                st.session_state["identifications"] = read_identifications(identifications_file, identifications_file.name)
+                st.session_state["rerun_identifications_reading"] = False
 
     ttolerance = st.number_input("Tolerance in Da:",
                                  key = "tolerance",
