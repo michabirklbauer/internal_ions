@@ -16,14 +16,16 @@ from util.tab2.plots import per_spec_ion_type
 from util.tab2.plots import per_spec_ion_intens
 from util.tab2.plots import logo_of_fraction
 
+from util.constants import DIV_COLOR
+
 def main(argv = None) -> None:
 
     ############################################################################
-    header = st.subheader("Statistics Tab", divider = "rainbow")
+    header = st.subheader("Statistics Tab", divider = DIV_COLOR)
     tab2_desc = st.markdown("Description text of tab2.")
 
     ############################################################################
-    file_upload_header_fs_csvs = st.subheader("Data Import", divider = "rainbow")
+    file_upload_header_fs_csvs = st.subheader("Data Import", divider = DIV_COLOR)
 
     if "dataframes" not in st.session_state:
         st.info("No results loaded! Please upload them here!")
@@ -61,14 +63,14 @@ def main(argv = None) -> None:
             st.success(f"Loaded results from {loaded_from_which_files}!")
 
     ############################################################################
-            show_previews_header = st.subheader("Results Viewer", divider = "rainbow")
+            show_previews_header = st.subheader("Results Viewer", divider = DIV_COLOR)
             frag_preview_text = st.markdown("Preview of the fragment-centric dataframe:")
             frag_preview = st.dataframe(st.session_state["dataframes"][0], height = 200)
             spec_preview_text = st.markdown("Preview of the spectrum-centric dataframe:")
             spec_preview = st.dataframe(st.session_state["dataframes"][1], height = 200)
 
     ############################################################################
-            filter_dfs_header = st.subheader("Filter Results", divider = "rainbow")
+            filter_dfs_header = st.subheader("Filter Results", divider = DIV_COLOR)
             filter_dfs_desc_text = st.markdown("Results can be further filtered with the filtering options below (optional).")
 
             # START filtering options
@@ -140,7 +142,7 @@ def main(argv = None) -> None:
                                                                            ion_filter_param)
 
     ############################################################################
-            frag_center_stats_header = st.subheader("Fragment-centric Statistics", divider = "rainbow")
+            frag_center_stats_header = st.subheader("Fragment-centric Statistics", divider = DIV_COLOR)
             frag_center_stats_desc = st.markdown("Fragment-centric stats description.")
 
             frag_center_plot_col1_1, frag_center_plot_col1_2 = st.columns(2)
@@ -167,7 +169,7 @@ def main(argv = None) -> None:
                 plot5 = st.plotly_chart(rel_ion_intens_ridge(filtered_fragments_df), use_container_width = True)
 
     ############################################################################
-            spec_center_stats_header = st.subheader("Spectrum-centric Statistics", divider = "rainbow")
+            spec_center_stats_header = st.subheader("Spectrum-centric Statistics", divider = DIV_COLOR)
             spec_center_stats_desc = st.markdown("Spectrum-centric stats description.")
 
             spec_center_plot_col1_1, spec_center_plot_col1_2 = st.columns(2)
