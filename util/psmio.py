@@ -10,8 +10,8 @@ def read_identifications(filename: str | BinaryIO, name: str) -> Dict[str, Dict]
     """
     Returns a dictionary that proteins/peptides to scan numbers:
     Dict["name": str,
-         "proteins": Dict[str, List[int]],
-         "peptides": Dict[str, List[int]]
+         "proteins": Dict[str, Set[int]],
+         "peptides": Dict[str, Set[int]]
     """
 
     proteins_to_scannr = dict()
@@ -26,15 +26,15 @@ def read_identifications(filename: str | BinaryIO, name: str) -> Dict[str, Dict]
             for psm in s["SpectrumIdentificationItem"]:
                 peptide = psm["PeptideSequence"]
                 if peptide in peptides_to_scannr:
-                    peptides_to_scannr[peptide].append(scan_nr)
+                    peptides_to_scannr[peptide].add(scan_nr)
                 else:
-                    peptides_to_scannr[peptide] = [scan_nr]
+                    peptides_to_scannr[peptide] = {scan_nr}
                 for p in psm["PeptideEvidenceRef"]:
                     protein = p["accession"]
                     if protein in proteins_to_scannr:
-                        proteins_to_scannr[protein].append(scan_nr)
+                        proteins_to_scannr[protein].add(scan_nr)
                     else:
-                        proteins_to_scannr[protein] = [scan_nr]
+                        proteins_to_scannr[protein] = {scan_nr}
                 nr_psms += 1
                 if nr_psms % 1000 == 0:
                     print(f"\t{nr_psms}")

@@ -151,9 +151,9 @@ def main(argv = None) -> None:
                                      "max_charge": max_charge,
                                      "max_isotope": max_isotope,
                                      "selected_protein": scans_from_protein_val,
-                                     "scans_from_protein": scans_from_protein_list,
+                                     "scans_from_protein": list(scans_from_protein_list),
                                      "selected_peptide": scans_from_peptide_val,
-                                     "scans_from_peptide": scans_from_peptide_list}
+                                     "scans_from_peptide": list(scans_from_peptide_list)}
                     with st_stdout("info"):
                         st.session_state["filtered_spectra"] = filter_spectra(st.session_state.spectrum_file,
                                                                               filter_params,
@@ -181,7 +181,7 @@ def main(argv = None) -> None:
             if len(st.session_state["filtered_spectra"]["filter_params"]["scans_from_protein"]) > 10:
                 scans_from_protein_str = "\"omitted due to size (>10)\""
             else:
-                scans_from_protein_str = "[" + ", ".join(st.session_state["filtered_spectra"]["filter_params"]["scans_from_protein"]) + "]"
+                scans_from_protein_str = "[" + ", ".join([str(x) for x in st.session_state["filtered_spectra"]["filter_params"]["scans_from_protein"]]) + "]"
 
         scans_from_peptide_str = ""
         if st.session_state["filtered_spectra"]["filter_params"]["selected_peptide"] is None:
@@ -190,7 +190,7 @@ def main(argv = None) -> None:
             if len(st.session_state["filtered_spectra"]["filter_params"]["scans_from_peptide"]) > 10:
                 scans_from_peptide_str = "\"omitted due to size (>10)\""
             else:
-                scans_from_peptide_str = "[" + ", ".join(st.session_state["filtered_spectra"]["filter_params"]["scans_from_peptide"]) + "]"
+                scans_from_peptide_str = "[" + ", ".join([str(x) for x in st.session_state["filtered_spectra"]["filter_params"]["scans_from_peptide"]]) + "]"
 
         params_str = "\t{\"source_filename\": " + f"{st.session_state['filtered_spectra']['name']}\n" + \
                      "\t \"filter_params\": \n\t\t{\"first_scan\": " + f"{st.session_state['filtered_spectra']['filter_params']['first_scan']}\n" + \
