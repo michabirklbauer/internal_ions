@@ -11,21 +11,66 @@ from fragannot.fragannot_call import fragannot_call
 
 from util.converter import JSONConverter
 from util.redirect import st_stdout
-from util.constants import FRAGANNOT_ION_NAMES
+from util.spectrumio import read_spectra
+from util.psmio import read_identifications
 from util.streamlit_utils import dataframe_to_csv_stream
 
+from util.constants import FRAGANNOT_ION_NAMES
+from util.constants import DIV_COLOR
+
+def reset_spectra() -> None:
+    st.session_state["rerun_spectra_reading"] = True
+
+def reset_identifications() -> None:
+    st.session_state["rerun_identifications_reading"] = True
+
 def main(argv = None) -> None:
-    header = st.subheader("Data Import", divider = "rainbow")
+
+    ############################################################################
+    header = st.subheader("Annotation Tab", divider = DIV_COLOR)
+    tab1_desc = st.markdown("Description text of tab1.")
+
+    ############################################################################
+    data_import_tab1_header = st.subheader("Data Import", divider = DIV_COLOR)
 
     spectrum_file = st.file_uploader("Upload spectrum file:",
                                      key = "spectrum_file",
                                      type = ["mgf"],
+                                     on_change = reset_spectra,
                                      help = "Upload a spectrum file to be analyzed in .mzml or .mgf format.")
+
+    if spectrum_file is not None:
+        with st.status("Reading spectra...") as spectra_reading_status:
+            with st_stdout("info"):
+                if "spectra" not in st.session_state:
+                    st.session_state["spectra"] = read_spectra(spectrum_file, spectrum_file.name)
+                    st.session_state["rerun_spectra_reading"] = False
+                if "spectra" in st.session_state:
+                    if st.session_state["rerun_spectra_reading"]:
+                        st.session_state["spectra"] = read_spectra(spectrum_file, spectrum_file.name)
+                        st.session_state["rerun_spectra_reading"] = False
+            read_spectra_successfully = st.success("Read all spectra successfully!")
+            spectra_reading_status.update(label = f"Read all spectra from file {st.session_state.spectrum_file.name} successfully!", state = "complete")
+
 
     identifications_file = st.file_uploader("Upload identification file:",
                                             key = "identifications_file",
                                             type = ["mzid"],
+                                            on_change = reset_identifications,
                                             help = "Upload a identification file that contains PSMs of the spectrum file in mzID format.")
+
+    if identifications_file is not None:
+        with st.status("Reading identifications...") as identifications_reading_status:
+            with st_stdout("info"):
+                if "identifications" not in st.session_state:
+                    st.session_state["identifications"] = read_identifications(identifications_file, identifications_file.name)
+                    st.session_state["rerun_identifications_reading"] = False
+                if "identifications" in st.session_state:
+                    if st.session_state["rerun_identifications_reading"]:
+                        st.session_state["identifications"] = read_identifications(identifications_file, identifications_file.name)
+                        st.session_state["rerun_identifications_reading"] = False
+            read_identifications_successfully = st.success("Read all identifications successfully!")
+            identifications_reading_status.update(label = f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state = "complete")
 
     ttolerance = st.number_input("Tolerance in Da:",
                                  key = "tolerance",
@@ -68,7 +113,10 @@ def main(argv = None) -> None:
     with fragannot_ions_col3:
 
         fions_desc_text = st.markdown("Here are some common selections for HCD/ETD/ect")
-        fions_desc_table = st.table(pd.DataFrame({"Method": ["HCD", "ETD"], "Ions": ["b, y", "c, z"]}))
+        fions_desc_table = st.dataframe(pd.DataFrame({"Method": ["HCD", "ETD"],
+                                                      "Ions": ["b, y", "c, z"]}),
+                                        hide_index = True,
+                                        width = 500)
 
     st.session_state["fragannot_ion_selection"] = [st.session_state.fA_ion,
                                                    st.session_state.fB_ion,
@@ -101,7 +149,8 @@ def main(argv = None) -> None:
                                help = "Neutral losses to consider for fragment ions. Multiple entries should be delimited by commas!")
     st.session_state["losses"] = [loss.strip() for loss in losses_str.split(",")]
 
-    st.subheader("Annotation", divider = "rainbow")
+    ############################################################################
+    st.subheader("Annotation", divider = DIV_COLOR)
 
     l1, l2, center_button, r1, r2 = st.columns(5)
 
@@ -110,33 +159,37 @@ def main(argv = None) -> None:
 
     if run_analysis:
         if st.session_state.spectrum_file is not None and st.session_state.identifications_file is not None:
-            with st.spinner("Fragannot is running..."):
-                run_info_title = st.markdown("**Parameters:**")
-                run_info_str = f"\tSpectrum file name: {st.session_state.spectrum_file.name}\n" + \
-                               f"\tIdentifications file name: {st.session_state.identifications_file.name}\n" + \
-                               f"\tTolerance: {st.session_state.tolerance}\n" + \
-                               f"\tSelected ions: {', '.join(st.session_state['fragannot_call_ion_selection'])}\n" + \
-                               f"\tCharges: {', '.join(st.session_state['charges'])}\n" + \
-                               f"\tLosses: {', '.join(st.session_state['losses'])}\n" + \
-                               f"\tDeisotope: {st.session_state.deisotope}"
-                run_info = st.text(run_info_str)
-                with st.expander("Show logging info:"):
-                    with st_stdout("info"):
-                        try:
-                            result = fragannot_call(st.session_state.spectrum_file,
-                                                    st.session_state.identifications_file,
-                                                    float(st.session_state.tolerance),
-                                                    st.session_state["fragannot_call_ion_selection"],
-                                                    st.session_state["charges"],
-                                                    st.session_state["losses"],
-                                                    st.session_state.deisotope)
-                            converter = JSONConverter()
-                            st.session_state["result"] = result
-                            st.session_state["dataframes"] = converter.to_dataframes(data = result)
-                            status_1 = 0
-                        except Exception as e:
-                            this_e = st.exception(e)
-                            status_1 = 1
+            run_info_title = st.markdown("**Parameters:**")
+            run_info_str = f"\tSpectrum file name: {st.session_state.spectrum_file.name}\n" + \
+                           f"\tIdentifications file name: {st.session_state.identifications_file.name}\n" + \
+                           f"\tTolerance: {st.session_state.tolerance}\n" + \
+                           f"\tSelected ions: {', '.join(st.session_state['fragannot_call_ion_selection'])}\n" + \
+                           f"\tCharges: {', '.join(st.session_state['charges'])}\n" + \
+                           f"\tLosses: {', '.join(st.session_state['losses'])}\n" + \
+                           f"\tDeisotope: {st.session_state.deisotope}"
+            run_info = st.text(run_info_str)
+            with st.status("Fragannot is running! Show logging info:") as st_status:
+                with st_stdout("info"):
+                    try:
+                        result = fragannot_call(st.session_state.spectrum_file,
+                                                st.session_state.identifications_file,
+                                                float(st.session_state.tolerance),
+                                                st.session_state["fragannot_call_ion_selection"],
+                                                st.session_state["charges"],
+                                                st.session_state["losses"],
+                                                st.session_state.deisotope)
+                        converter = JSONConverter()
+                        st.session_state["result"] = result
+                        st.session_state["dataframes"] = converter.to_dataframes(data = result)
+                        st.session_state["dataframes_source"] = {"spectrum_file": st.session_state.spectrum_file.name,
+                                                                 "identifications_file": st.session_state.identifications_file.name,
+                                                                 "fragment_centric_csv": None,
+                                                                 "spectrum_centric_csv": None}
+                        status_1 = 0
+                        st_status.update(label = "Fragannot finished successfully!", state = "complete")
+                    except Exception as e:
+                        this_e = st.exception(e)
+                        status_1 = 1
             if status_1 == 0:
                 res_status_1 = st.success("Fragannot finished successfully!")
             else:
@@ -144,48 +197,41 @@ def main(argv = None) -> None:
         else:
             res_status_1 = st.error("You need to specify a spectrum AND identifications file!")
 
+    ############################################################################
     if "dataframes" in st.session_state:
-        results_preview_header = st.subheader("Results Preview", divider = "rainbow")
+        results_preview_header = st.subheader("Results Preview", divider = DIV_COLOR)
         preview_csv_1_desc = st.markdown("Fragment-centric")
         preview_csv_1 = st.dataframe(st.session_state["dataframes"][0].head(10))
         preview_csv_1_desc = st.markdown("Spectrum-centric")
         preview_csv_1 = st.dataframe(st.session_state["dataframes"][1].head(10))
 
-        results_header = st.subheader("Download Results", divider = "rainbow")
+        results_header = st.subheader("Download Results", divider = DIV_COLOR)
 
         dl_l1, dl_center, dl_r1 = st.columns(3)
 
         with dl_l1:
-            csv_1 = st.download_button(label = "Download Fragment-centric CSV!",
+            csv_1 = st.download_button(label = "Download Fragment-centric data!",
                                        data = dataframe_to_csv_stream(st.session_state["dataframes"][0]),
                                        file_name = "fragment_centric.csv",
                                        mime = "text/csv",
-                                       help = "Download fragment-centric Fragannot results in CSV format.",
+                                       help = "Download fragment-centric Fragannot results in .csv format.",
+                                       type = "primary",
                                        use_container_width = True)
         with dl_center:
-            csv_2 = st.download_button(label = "Download Spectrum-centric CSV!",
+            csv_2 = st.download_button(label = "Download Spectrum-centric data!",
                                        data = dataframe_to_csv_stream(st.session_state["dataframes"][1]),
                                        file_name = "spectrum_centric.csv",
                                        mime = "text/csv",
-                                       help = "Download spectrum-centric Fragannot results in CSV format.",
+                                       help = "Download spectrum-centric Fragannot results in .csv format.",
+                                       type = "primary",
                                        use_container_width = True)
-        #xlsx_1 = st.download_button(label = "Download Fragment-centric XLSX!",
-        #                            data = dataframe_to_xlsx_stream(st.session_state["dataframes"][0], "fragment"),
-        #                            file_name = "fragment_centric.xlsx",
-        #                            mime = "application/vnd.ms-excel",
-        #                            help = "Download fragment-centric Fragannot results in XLSX format."
-        #                           )
-        #xlsx_2 = st.download_button(label = "Download Spectrum-centric XLSX!",
-        #                            data = dataframe_to_xlsx_stream(st.session_state["dataframes"][1], "spectrum"),
-        #                            file_name = "spectrum_centric.xlsx",
-        #                            mime = "application/vnd.ms-excel",
-        #                            help = "Download spectrum-centric Fragannot results in XLSX format."
-        #                           )
+
         if "result" in st.session_state:
             with dl_r1:
-                json_output = st.download_button(label = "Download raw result in JSON format!",
+                json_output = st.download_button(label = "Download raw result in .json format!",
                                                  data = json.dumps(st.session_state["result"]),
                                                  file_name = "result.json",
                                                  mime = "text/json",
-                                                 help = "Download raw Fragannot results in JSON file format.",
+                                                 help = "Download raw Fragannot results in .json file format.",
+                                                 type = "primary",
                                                  use_container_width = True)
