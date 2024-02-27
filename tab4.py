@@ -2,10 +2,8 @@
 
 import streamlit as st
 
-from util.constants import DIV_COLOR
-
 def main(argv = None) -> None:
-    header = st.subheader("header tab 4", divider = DIV_COLOR)
+    header = st.subheader("header tab 4", divider = "rainbow")
 
     if "dataframes" in st.session_state:
         if st.session_state["dataframes"] is not None:
