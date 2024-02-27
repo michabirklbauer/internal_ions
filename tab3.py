@@ -215,7 +215,7 @@ def main(argv = None) -> None:
         with dl_l1:
             mgf_spectra = st.download_button(label = "Download spectra in .mgf format!",
                                              data = spectra_to_mgf_stream(st.session_state["filtered_spectra"]),
-                                             file_name = "filtered_spectra.mgf",
+                                             file_name = "filtered_spectra.mgf.txt",
                                              mime = "text/plain",
                                              help = "Download the filtered spectra in .mgf file format.",
                                              type = "primary",
