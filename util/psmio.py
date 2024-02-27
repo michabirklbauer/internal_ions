@@ -17,7 +17,10 @@ def read_identifications(filename: str | BinaryIO, name: str) -> Dict[str, Dict]
     proteins_to_scannr = dict()
     peptides_to_scannr = dict()
 
+    print("Read identifications in total:")
+
     with mzid.read(filename) as reader:
+        nr_psms = 0
         for s in reader:
             scan_nr = int(s["name"])
             for psm in s["SpectrumIdentificationItem"]:
@@ -32,6 +35,11 @@ def read_identifications(filename: str | BinaryIO, name: str) -> Dict[str, Dict]
                         proteins_to_scannr[protein].append(scan_nr)
                     else:
                         proteins_to_scannr[protein] = [scan_nr]
+                nr_psms += 1
+                if nr_psms % 1000 == 0:
+                    print(f"\t{nr_psms}")
         reader.close()
+
+    print(f"\nFinished reading {nr_psms} identifications!")
 
     return {"name": name, "proteins": proteins_to_scannr, "peptides": peptides_to_scannr}
