@@ -125,14 +125,19 @@ def main(argv = None) -> None:
                                                   help = "Upload a spectrum file to be analyzed in .mgf format.")
 
         if filtered_spectrum_file is not None:
+            trigger_rerun = False
             with st.status("Reading spectra...") as filtered_spectra_reading_status:
                 with st_stdout("info"):
                     if "filtered_spectra" not in st.session_state:
                         st.session_state["filtered_spectra"] = read_filtered_spectra(filtered_spectrum_file, filtered_spectrum_file.name)
                         st.session_state["rerun_filtered_spectra_reading"] = False
+                        trigger_rerun = True
                     if "filtered_spectra" in st.session_state:
                         if st.session_state["rerun_filtered_spectra_reading"]:
                             st.session_state["filtered_spectra"] = read_filtered_spectra(filtered_spectrum_file, filtered_spectrum_file.name)
                             st.session_state["rerun_filtered_spectra_reading"] = False
+                            trigger_rerun = True
                 read_filtered_spectra_successfully = st.success("Read all spectra successfully!")
                 filtered_spectra_reading_status.update(label = f"Read all spectra from file {st.session_state.filtered_spectrum_file.name} successfully!", state = "complete")
+                if trigger_rerun:
+                    st.rerun()
