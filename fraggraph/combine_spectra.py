@@ -108,6 +108,7 @@ def combine_spectra(file_path = None,
                     mzd = 0.01,
                     min_prop = 0.5,
                     weighted = False,
+                    filetype = "mgf",
                     is_streamlit = False):
 
 
@@ -120,23 +121,23 @@ def combine_spectra(file_path = None,
         if len(spectra) == 1:
             return spectra[0]
 
-        # Check if all spectra have the same MS level
-        if len(set([s['ms level'] for s in spectra])) != 1:
-            # If not, keep only MS2 spectra:
-            spectra = [s for s in spectra if s['ms level'] == 2]
-            print("Warning: not all spectra have the same MS level. Keeping only MS2 spectra.")
-
-        #TODO first combine peak in each spectrum, then combine spectra
-        for s in spectra:
-            mz_groups = group_mz_values(s['m/z array'], mzd=mzd)
-            s['m/z array'] = np.array([np.mean(s['m/z array'][mz_groups == i]) for i in range(1, max(mz_groups) + 1)])
-            s['intensity array'] = np.array([np.sum(s['intensity array'][mz_groups == i]) for i in range(1, max(mz_groups) + 1)])
-
     elif spectra_list is not None:
         spectra = spectra_list
     else:
         raise ValueError("Please provide either file_path or spectra_list.")
 
+    # Check if all spectra have the same MS level
+    if filetype != "mgf":
+        if len(set([s['ms level'] for s in spectra])) != 1:
+            # If not, keep only MS2 spectra:
+            spectra = [s for s in spectra if s['ms level'] == 2]
+            print("Warning: not all spectra have the same MS level. Keeping only MS2 spectra.")
+
+    #TODO first combine peak in each spectrum, then combine spectra
+    for s in spectra:
+        mz_groups = group_mz_values(s['m/z array'], mzd=mzd)
+        s['m/z array'] = np.array([np.mean(s['m/z array'][mz_groups == i]) for i in range(1, max(mz_groups) + 1)])
+        s['intensity array'] = np.array([np.sum(s['intensity array'][mz_groups == i]) for i in range(1, max(mz_groups) + 1)])
 
     mz_data = np.concatenate([s['m/z array'] for s in spectra])
     intensity_data = np.concatenate([s['intensity array'] for s in spectra])

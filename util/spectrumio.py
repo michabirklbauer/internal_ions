@@ -149,3 +149,35 @@ def filter_spectra(filename: str | BinaryIO, filter_params: Dict[str, Any], name
     print(f"\nFinished filtering {s + 1} spectra in total!")
 
     return {"name": name, "filter_params": filter_params, "spectra": spectra}
+
+def read_filtered_spectra(filename: str | BinaryIO, name: str) -> Dict[str, Any]:
+
+    filter_params = {"first_scan": None,
+                     "last_scan": None,
+                     "min_mz": None,
+                     "max_mz": None,
+                     "min_rt": None,
+                     "max_rt": None,
+                     "max_charge": None,
+                     "max_isotope": None,
+                     "selected_protein": None,
+                     "scans_from_protein": [],
+                     "selected_peptide": None,
+                     "scans_from_peptide": []}
+
+    spectra = []
+
+    print("Read spectra in total:")
+
+    with mgf.read(filename, use_index = True) as reader:
+        for s, spectrum in enumerate(reader):
+
+            if (s + 1) % 1000 == 0:
+                print(f"\t{s + 1}")
+
+            spectra.append(spectrum)
+        reader.close()
+
+    print(f"\nFinished reading {s + 1} spectra!")
+
+    return {"name": name, "filter_params": filter_params, "spectra": spectra}

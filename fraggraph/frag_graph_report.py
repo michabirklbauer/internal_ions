@@ -729,6 +729,5 @@ def plot_spectrum(FG, category=["unassigned", "internal", "terminal", "both"]):
     plt.setp(stemlines, "linewidth", 0.4)
     plt.xlabel("m/z")
     plt.ylabel("Intensity")
-    plt.show()
 
     return plt

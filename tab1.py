@@ -37,7 +37,7 @@ def main(argv = None) -> None:
                                      key = "spectrum_file",
                                      type = ["mgf"],
                                      on_change = reset_spectra,
-                                     help = "Upload a spectrum file to be analyzed in .mzml or .mgf format.")
+                                     help = "Upload a spectrum file to be analyzed in .mgf format.")
 
     if spectrum_file is not None:
         with st.status("Reading spectra...") as spectra_reading_status:
@@ -57,7 +57,7 @@ def main(argv = None) -> None:
                                             key = "identifications_file",
                                             type = ["mzid"],
                                             on_change = reset_identifications,
-                                            help = "Upload a identification file that contains PSMs of the spectrum file in mzID format.")
+                                            help = "Upload a identification file that contains PSMs of the spectrum file in .mzid format.")
 
     if identifications_file is not None:
         with st.status("Reading identifications...") as identifications_reading_status:

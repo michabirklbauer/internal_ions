@@ -150,23 +150,28 @@ def main(argv = None) -> None:
             with frag_center_plot_col1_1:
                 plot1_title = st.markdown("**Histogram of ion types:**")
                 plot1 = st.plotly_chart(common_type_hist(filtered_fragments_df), use_container_width = True)
+                plot1_caption = st.markdown(f"**Figure 1:** caption.")
 
             with frag_center_plot_col1_2:
                 plot2_title = st.markdown("**Pie chart of ion types:**")
                 plot2 = st.plotly_chart(common_type_pie(filtered_fragments_df), use_container_width = True)
+                plot2_caption = st.markdown(f"**Figure 2:** caption.")
 
             plot3_title = st.markdown("**Histogram of m/z per ion type:**")
             plot3 = st.plotly_chart(mz_dist_ion_type(filtered_fragments_df), use_container_width = True)
+            plot3_caption = st.markdown(f"**Figure 3:** caption.")
 
             frag_center_plot_col3_1, frag_center_plot_col3_2 = st.columns(2)
 
             with frag_center_plot_col3_1:
                 plot4_title = st.markdown("**Log Intensities Distribution:**")
                 plot4 = st.plotly_chart(rel_ion_intens_perc(filtered_fragments_df), use_container_width = True)
+                plot4_caption = st.markdown(f"**Figure 4:** caption.")
 
             with frag_center_plot_col3_2:
                 plot5_title = st.markdown("**Relative Log Intensities:**")
                 plot5 = st.plotly_chart(rel_ion_intens_ridge(filtered_fragments_df), use_container_width = True)
+                plot5_caption = st.markdown(f"**Figure 5:** caption.")
 
     ############################################################################
             spec_center_stats_header = st.subheader("Spectrum-centric Statistics", divider = DIV_COLOR)
@@ -177,10 +182,12 @@ def main(argv = None) -> None:
             with spec_center_plot_col1_1:
                 plot6_title = st.markdown("**Ion type per spectrum:**")
                 plot6 = st.plotly_chart(per_spec_ion_type(filtered_spectra_df), use_container_width = True)
+                plot6_caption = st.markdown(f"**Figure 6:** caption.")
 
             with spec_center_plot_col1_2:
                 plot7_title = st.markdown("**Log Intensities:**")
                 plot7 = st.plotly_chart(per_spec_ion_intens(filtered_spectra_df), use_container_width = True)
+                plot7_caption = st.markdown(f"**Figure 7:** caption.")
 
             plot8_title = st.markdown("**Logo view of internal fragments:**")
             with st.expander("Expand for changing logo view options."):
@@ -198,3 +205,4 @@ def main(argv = None) -> None:
                                                plot8_topn,
                                                p8_max_length_logo,
                                                p8_min_length_logo))
+            plot8_caption = st.markdown(f"**Figure 8:** caption.")
