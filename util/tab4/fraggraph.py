@@ -246,6 +246,12 @@ def main(argv = None) -> None:
                                 state = "complete")
 
     if "consensus_spectrum" in st.session_state:
+        # empty strings are handled as None values
+        if params["pep1"] == "":
+            params["pep1"] = None
+        if params["pep2"] == "":
+            params["pep2"] = None
+        # check cases
         if params["pep1"] is None and params["pep2"] is None:
             st.error(f"Please select at least one peptide/peptidoform to run Fraggraph!", icon = "🚨")
         elif params["pep1"] is None and params["pep2"] is not None:
