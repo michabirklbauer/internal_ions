@@ -25,4 +25,4 @@
 - Install requirements!
 - Run `streamlit run streamlit_app.py`
 
-## Server -> [89.58.32.151][http://89.58.32.151/]
+## Server -> [89.58.32.151](http://89.58.32.151/)
