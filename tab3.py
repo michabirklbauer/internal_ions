@@ -8,6 +8,10 @@ def main(argv = None) -> None:
 
     ############################################################################
     header = st.subheader("Spectrum Tab", divider = "rainbow")
+    tab3_desc = st.markdown("Description text of tab3.")
+
+    ############################################################################
+    data_import_tab3_header = st.subheader("Data Import", divider = "rainbow")
 
     if "spectra" in st.session_state:
         st.success(f"Spectra from file \"{st.session_state['spectra']['name']}\" were successfully loaded!")
