@@ -6,6 +6,11 @@
 - Recommended: python 3.11.7
 - Packages: `pip install -r requirements.txt`
 - Packages (alternative, exact version numbers): `pip install -r python3117.txt`
+- Packages (Ubuntu 22.04, python 3.10.13): `pip install -r Docker.config`
+  - Downgraded rpy2 package because of missmatch with setuptools.
+- You also need to have R installed!
+  - Additionally the environmental variable `R_HOME` needs to be set and point to your R installation
+  - Alternatively you can specify the path to your R installation in `R_HOME.config` and this will be done for you at runtime
 
 ## Development Notes
 
@@ -24,3 +29,5 @@
 
 - Install requirements!
 - Run `streamlit run streamlit_app.py`
+
+## Server -> [89.58.32.151](http://89.58.32.151/)

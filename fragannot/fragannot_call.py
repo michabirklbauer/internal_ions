@@ -17,7 +17,8 @@ def fragannot_call(spectrum_file: BinaryIO,
                    charges: List[str],
                    losses: List[str],
                    deisotope: bool,
-                   file_format: str = "infer") -> Dict:
+                   file_format: str = "infer",
+                   verbose: bool = False) -> Dict:
 
     tmp_dir_name = "tmp_fragannot_files_471625739"
     if os.path.exists(tmp_dir_name) and os.path.isdir(tmp_dir_name):
@@ -51,10 +52,12 @@ def fragannot_call(spectrum_file: BinaryIO,
     try:
         os.remove(output_name_prefix + spectrum_file.name)
     except Exception as e:
-        print("Could not remove file: " + output_name_prefix + spectrum_file.name)
+        if verbose:
+            print("Could not remove file: " + output_name_prefix + spectrum_file.name)
     try:
         os.remove(output_name_prefix + identifications_file.name)
     except Exception as e:
-        print("Could not remove file: " + output_name_prefix + identifications_file.name)
+        if verbose:
+            print("Could not remove file: " + output_name_prefix + identifications_file.name)
 
     return fragannot_dict

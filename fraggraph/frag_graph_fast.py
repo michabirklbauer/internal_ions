@@ -20,7 +20,7 @@ from tqdm import tqdm
 import networkx as nx
 from pyteomics import mass, parser as pyteomics_parser
 import brainpy as bp
-import constant
+import fraggraph.constant as constant
 import psm_utils
 from scipy.optimize import minimize
 from time import sleep
@@ -67,7 +67,7 @@ class FragGraph(nx.DiGraph):
         super().__init__()
 
         # read parameters from json file and add as attributes
-        frag_params = json.load(open("./source/fragmentation_parameters.json"))
+        frag_params = json.load(open("./fraggraph/fragmentation_parameters.json"))
         if fragmentation_parameters in frag_params:
             frag_param = frag_params[fragmentation_parameters]
             # add attributes

@@ -34,7 +34,8 @@ def main(argv = None) -> None:
         if scan_nr is not None:
             spectrum_plot = plot_spectrum(st.session_state["spectra"]["spectra"][scan_nr]["peaks"].values(),
                                           st.session_state["spectra"]["spectra"][scan_nr]["peaks"].keys())
-            st.plotly_chart(spectrum_plot)
+            st_spectrum_plot = st.plotly_chart(spectrum_plot, use_container_width = True)
+            st_spectrum_plot_caption = st.markdown(f"**Figure 1:** Displaying spectrum with scan number {scan_nr}.")
 
     ############################################################################
         spectrum_selection_header = st.subheader("Spectrum Selector", divider = DIV_COLOR)

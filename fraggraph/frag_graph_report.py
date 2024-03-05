@@ -18,7 +18,7 @@ from tqdm import tqdm
 import networkx as nx
 from pyteomics import mass, parser as pyteomics_parser
 import brainpy as bp
-import constant
+import fraggraph.constant as constant
 import psm_utils
 from scipy.optimize import minimize
 import rpy2.robjects as ro
@@ -142,6 +142,7 @@ def draw_fragment_coverage_matrix(
         if filename:
             gg.save(filename=filename)
             print(f"Plot saved to {filename}")
+            return gg
         else:
             return gg
 
@@ -378,6 +379,7 @@ def draw_fragment_coverage_matrix_difference(
         if filename:
             gg.save(filename)
             print(f"Plot saved to {filename}")
+            return gg
         else:
             return gg
 
@@ -590,6 +592,7 @@ def barplot_intensity_compare_site_determining(
         if output_filename:
             gg.save(output_filename)
             print(f"Plot saved to {output_filename}")
+            return gg, gg_boxplot
         else:
             return gg, gg_boxplot
 
@@ -695,9 +698,10 @@ def percentage_intensity_distribution(
         + geom_text(aes(label="percentage"), position=position_stack(vjust=0.5), size=5)
     )
 
-    ggsave(gg, filename=filename)
+    if filename is not None:
+        ggsave(gg, filename=filename)
 
-    return df
+    return gg
 
 
 # plot the experimental spectrum stored in the FG object
@@ -721,9 +725,9 @@ def plot_spectrum(FG, category=["unassigned", "internal", "terminal", "both"]):
         linefmt="black",
         markerfmt=" ",
         basefmt=" ",
-        use_line_collection=True,
     )
     plt.setp(stemlines, "linewidth", 0.4)
     plt.xlabel("m/z")
     plt.ylabel("Intensity")
-    plt.show()
+
+    return plt

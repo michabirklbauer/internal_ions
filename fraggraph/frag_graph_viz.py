@@ -6,6 +6,7 @@ def draw_graph3(
     networkx_graph,
     output_filename="graph.html",
     show_buttons=True,
+    customizable=False
 ):
     """
     This function accepts a networkx graph object,
@@ -32,11 +33,12 @@ def draw_graph3(
 
     # make a pyvis network
     network_class_parameters = {
-        "notebook": True,
+        "notebook": False,
         "height": "900px",
-        "width": "100%",
+        "width": "900px",
         "bgcolor": "white",
         "font_color": "black",
+        "cdn_resources": "remote"
     }
     pyvis_graph = net.Network(
         **{
@@ -67,7 +69,7 @@ def draw_graph3(
     options = """
         var options = {
         "configure": {
-                "enabled": true
+                "enabled": false
         },
         "nodes": {
             "font": {
@@ -91,10 +93,38 @@ def draw_graph3(
         }
         """
 
+    if customizable:
+        options = """
+            var options = {
+            "configure": {
+                    "enabled": true
+            },
+            "nodes": {
+                "font": {
+                    "size": 3
+                },
+                "size": 1
+            },
+            "edges": {
+                "color": {
+                "inherit": true
+                },
+                "smooth": false
+            },
+            "physics": {
+                "barnesHut": {
+                "gravitationalConstant": -12050
+                },
+                "minVelocity": 5,
+                "timestep": 0.2
+            }
+            }
+            """
+
     pyvis_graph.set_options(options)
 
     # return and also save
-    return pyvis_graph.show(output_filename)
+    return pyvis_graph.write_html(output_filename)
 
 
 def draw_annotated_spectrum(graph):

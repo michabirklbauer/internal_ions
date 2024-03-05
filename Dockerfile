@@ -1,12 +1,15 @@
 # Dockerfile for Internal Ion Explorer
 # author: Micha Birklbauer
-# version: 1.1.1
+# version: 1.2.0
 
 FROM ubuntu:22.04
 
 LABEL maintainer="micha.birklbauer@gmail.com"
 
 ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y gnupg gnupg1 gnupg2 software-properties-common
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+RUN add-apt-repository -y "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
 RUN apt-get update && apt-get install -y \
     curl \
     git \
@@ -16,18 +19,16 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libsm6 \
     libxrender1 \
-    libxext6
+    libxext6 \
+    r-base \
+    python3-rpy2
 
-RUN git clone https://github.com/arthur-grimaud/fragannot.git
-WORKDIR fragannot
+ENV R_HOME="/usr/lib/R"
 
-RUN pip3 install -r requirements.txt
-RUN pip3 install -r developer_requirements.txt
+RUN mkdir internal_ions
+COPY ./ internal_ions/
+WORKDIR internal_ions
 
-WORKDIR publish
-RUN python3 setup.py install
+RUN pip3 install -r Docker.config
 
-WORKDIR ../gui
-RUN pip3 install -r requirements.txt
-
-CMD  ["streamlit", "run", "streamlit_app.py", "--server.maxUploadSize", "5000"]
+CMD  ["streamlit", "run", "streamlit_app.py"]
