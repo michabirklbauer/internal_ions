@@ -2,6 +2,8 @@
 
 from pyteomics import mgf
 
+from typing import Any
+from typing import List
 from typing import Dict
 from typing import Tuple
 from typing import BinaryIO
@@ -53,8 +55,14 @@ def read_spectra(filename: str | BinaryIO, name: str) -> Dict[int, Dict]:
 
     result_dict = dict()
 
+    print("Read spectra in total:")
+
     with mgf.read(filename, use_index = True) as reader:
         for s, spectrum in enumerate(reader):
+
+            if (s + 1) % 1000 == 0:
+                print(f"\t{s + 1}")
+
             scan_nr = parse_scannr(spectrum["params"], -s)[1]
             spectrum_dict = dict()
             spectrum_dict["precursor"] = spectrum["params"]["pepmass"]
@@ -68,4 +76,76 @@ def read_spectra(filename: str | BinaryIO, name: str) -> Dict[int, Dict]:
             result_dict[scan_nr] = spectrum_dict
         reader.close()
 
+    print(f"\nFinished reading {s + 1} spectra!")
+
     return {"name": name, "spectra": result_dict}
+
+def filter_spectra(filename: str | BinaryIO, filter_params: Dict[str, Any], name: str) -> Dict[str, Any]:
+    """
+    Returns a Dict including a list of spectra from pyteomics.mgf based on the given filter criteria:
+    Dict["name": name,
+         "filter_params": filter_params,
+         "spectra": List[Dict]]
+    """
+
+    spectra = []
+
+    print("Filtered spectra in total:")
+
+    with mgf.read(filename, use_index = True) as reader:
+        for s, spectrum in enumerate(reader):
+
+            if (s + 1) % 1000 == 0:
+                print(f"\t{s + 1}")
+
+            scan_nr = parse_scannr(spectrum["params"], -s)[1]
+
+            # check spectrum > first scan
+            if "first_scan" in filter_params:
+                if scan_nr < int(filter_params["first_scan"]):
+                    continue
+
+            if "last_scan" in filter_params:
+                if scan_nr > int(filter_params["last_scan"]):
+                    continue
+
+            if "min_mz" in filter_params:
+                if float(spectrum["params"]["pepmass"][0]) < float(filter_params["min_mz"]):
+                    continue
+
+            if "max_mz" in filter_params:
+                if float(spectrum["params"]["pepmass"][0]) > float(filter_params["max_mz"]):
+                    continue
+
+            if "min_rt" in filter_params:
+                if float(spectrum["params"]["rtinseconds"]) < float(filter_params["min_rt"]):
+                    continue
+
+            if "max_rt" in filter_params:
+                if float(spectrum["params"]["rtinseconds"]) > float(filter_params["max_rt"]):
+                    continue
+
+            if "max_charge" in filter_params:
+                # how to handle mutiple charges?
+                for charge in spectrum["params"]["charge"]:
+                    if int(charge) > int(filter_params["max_charge"]):
+                        continue
+
+            if "max_isotope" in filter_params:
+                pass
+                # todo implement
+
+            if "scans_from_protein" in filter_params:
+                if scan_nr not in filter_params["scans_from_protein"]:
+                    continue
+
+            if "scans_from_peptide" in filter_params:
+                if scan_nr not in filter_params["scans_from_peptide"]:
+                    continue
+
+            spectra.append(spectrum)
+        reader.close()
+
+    print(f"\nFinished filtering {s + 1} spectra in total!")
+
+    return {"name": name, "filter_params": filter_params, "spectra": spectra}
