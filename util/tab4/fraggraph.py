@@ -71,36 +71,76 @@ def single_fraggraph(pep1: str, frag: str, iso: str, verbose: bool = False) -> N
         plots_header = st.subheader("Other Plots")
         plots_desc = st.markdown("Description text")
 
-        # plotting the spectrum
-        from fraggraph.frag_graph_report import plot_spectrum
+        # plotting the spectrum - OLD
+        #from fraggraph.frag_graph_report import plot_spectrum
+        #
+        #plot1_title = st.markdown("**Experimental Spectrum:**")
+        #plot1 = st.pyplot(plot_spectrum(fg), use_container_width = True)
+        #plot1_caption = st.markdown(f"**Figure 2:** caption.")
 
-        plot1_title = st.markdown("**Experimental Spectrum:**")
-        plot1 = st.pyplot(plot_spectrum(fg), use_container_width = True)
-        plot1_caption = st.markdown(f"**Figure 2:** caption.")
+        # plotting the spectrum
+        from fraggraph.frag_graph_report import plot_mass_spectrum
+        plot1a_title = st.markdown("**Experimental Spectrum 1:**")
+        plot1a = st.pyplot(plot_mass_spectrum(fg,
+                                              color_map = {"terminal": "black",
+                                                           "internal": "black",
+                                                           "unassigned": "black",
+                                                           "both": "black"}),
+                           use_container_width = True)
+        plot1a_caption = st.markdown(f"**Figure 2 (A):** caption.")
+
+        plot1b_title = st.markdown("**Experimental Spectrum 2:**")
+        plot1b = st.pyplot(plot_mass_spectrum(fg,
+                                              color_map = {"terminal": "red",
+                                                           "internal": "white",
+                                                           "unassigned": "white",
+                                                           "both": "white"}),
+                           use_container_width = True)
+        plot1b_caption = st.markdown(f"**Figure 2 (B):** caption.")
+
+        plot1c_title = st.markdown("**Experimental Spectrum 3:**")
+        plot1c = st.pyplot(plot_mass_spectrum(fg),
+                           use_container_width = True)
+        plot1c_caption = st.markdown(f"**Figure 2 (C):** caption.")
 
         # formatting
         plot_col1, plot_col2 = st.columns(2)
 
         # plotting distribution
         from plotnine import ggplot
-        from fraggraph.frag_graph_report import percentage_intensity_distribution
+
+        # OLD
+        #from fraggraph.frag_graph_report import percentage_intensity_distribution
+        #
+        #with plot_col1:
+        #    plot2_title = st.markdown("**Intensity Distribution:**")
+        #    plot2 = st.pyplot(ggplot.draw(percentage_intensity_distribution(fg, filename = None)), use_container_width = True)
+        #    plot2_caption = st.markdown(f"**Figure 3:** caption.")
+
+        from fraggraph.frag_graph_report import plot_intensity_distribution
 
         with plot_col1:
-            plot2_title = st.markdown("**Intensity Distribution:**")
-            plot2 = st.pyplot(ggplot.draw(percentage_intensity_distribution(fg, filename = None)), use_container_width = True)
-            plot2_caption = st.markdown(f"**Figure 3:** caption.")
+            plot2a_title = st.markdown("**Intensity Distribution:**")
+            plot2a = st.pyplot(ggplot.draw(plot_intensity_distribution(fg, filename = None)), use_container_width = True)
+            plot2a_caption = st.markdown(f"**Figure 3 (A):** caption.")
+
+        from fraggraph.frag_graph_report import plot_fragment_count_distribution
+
+        with plot_col2:
+            plot2b_title = st.markdown("**Peak Distribution:**")
+            plot2b = st.pyplot(ggplot.draw(plot_fragment_count_distribution(fg, filename = None)), use_container_width = True)
+            plot2b_caption = st.markdown(f"**Figure 3 (B):** caption.")
 
         # fragment coverage matrix
         from fraggraph.frag_graph_report import draw_fragment_coverage_matrix
 
-        with plot_col2:
-            plot3_title = st.markdown("**Fragment Coverage Matrix:**")
-            plot3 = st.pyplot(ggplot.draw(draw_fragment_coverage_matrix(fg,
-                                                                        x = "avg_cosine_similarity",
-                                                                        x_min = 0.7,
-                                                                        x_max = 1)),
-                              use_container_width = True)
-            plot3_caption = st.markdown(f"**Figure 4:** caption.")
+        plot3_title = st.markdown("**Fragment Coverage Matrix:**")
+        plot3 = st.pyplot(ggplot.draw(draw_fragment_coverage_matrix(fg,
+                                                                    x = "avg_cosine_similarity",
+                                                                    x_min = 0.7,
+                                                                    x_max = 1)),
+                          use_container_width = True)
+        plot3_caption = st.markdown(f"**Figure 4:** caption.")
 
     # file storage clean up
     try:
