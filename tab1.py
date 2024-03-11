@@ -33,7 +33,7 @@ def main(argv = None) -> None:
     ############################################################################
     data_import_tab1_header = st.subheader("Data Import", divider = DIV_COLOR)
 
-    spectrum_file = st.file_uploader("Upload spectrum file:",
+    spectrum_file = st.file_uploader("Upload a spectrum file (we assume all spectra are MS2-level):",
                                      key = "spectrum_file",
                                      type = ["mgf"],
                                      on_change = reset_spectra,
@@ -53,7 +53,7 @@ def main(argv = None) -> None:
             spectra_reading_status.update(label = f"Read all spectra from file {st.session_state.spectrum_file.name} successfully!", state = "complete")
 
 
-    identifications_file = st.file_uploader("Upload identification file:",
+    identifications_file = st.file_uploader("Upload an identification file:",
                                             key = "identifications_file",
                                             type = ["mzid"],
                                             on_change = reset_identifications,

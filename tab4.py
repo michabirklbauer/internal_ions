@@ -118,7 +118,7 @@ def main(argv = None) -> None:
         st.info("No spectra selected! Please upload a file in the \"Annotation\" tab and select the " +
                 "desired spectra in the \"Spectrum\" tab or upload a file here.")
 
-        filtered_spectrum_file = st.file_uploader("Upload spectrum file:",
+        filtered_spectrum_file = st.file_uploader("Upload a spectrum file (we assume all spectra are MS2-level):",
                                                   key = "filtered_spectrum_file",
                                                   type = ["mgf"],
                                                   on_change = reset_filtered_spectra,
