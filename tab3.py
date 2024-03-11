@@ -64,13 +64,6 @@ def main(argv = None) -> None:
                                      step = 0.01,
                                      help = "The minimum rt.")
 
-            max_charge = st.number_input("Select the maximum charge for a spectrum:",
-                                         min_value = 1,
-                                         max_value = 20,
-                                         value = 4,
-                                         step = 1,
-                                         help = "The maximum charge.")
-
         with spec_sel_col2:
             last_scan = st.selectbox("Select the last scan number to analyse:",
                                      st.session_state["spectra"]["spectra"].keys(),
@@ -91,12 +84,12 @@ def main(argv = None) -> None:
                                      step = 0.01,
                                      help = "The maximum rt.")
 
-            max_isotope = st.number_input("Select the maximum isotope for a spectrum:",
-                                          min_value = 1,
-                                          max_value = 20,
-                                          value = 4,
-                                          step = 1,
-                                          help = "The maximum isotope.")
+        max_charge = st.number_input("Select the maximum charge for a spectrum:",
+                                     min_value = 1,
+                                     max_value = 20,
+                                     value = 10,
+                                     step = 1,
+                                     help = "The maximum charge.")
 
         if "identifications" in st.session_state:
             st.success(f"Identifications from file \"{st.session_state['identifications']['name']}\" were successfully loaded!")
@@ -150,7 +143,6 @@ def main(argv = None) -> None:
                                      "min_rt": min_rt,
                                      "max_rt": max_rt,
                                      "max_charge": max_charge,
-                                     "max_isotope": max_isotope,
                                      "selected_protein": scans_from_protein_val,
                                      "scans_from_protein": list(scans_from_protein_list),
                                      "selected_peptide": scans_from_peptide_val,
@@ -201,7 +193,6 @@ def main(argv = None) -> None:
                      "\t\t \"min_rt\": " + f"{st.session_state['filtered_spectra']['filter_params']['min_rt']}\n" + \
                      "\t\t \"max_rt\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_rt']}\n" + \
                      "\t\t \"max_charge\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_charge']}\n" + \
-                     "\t\t \"max_isotope\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_isotope']}\n" + \
                      "\t\t \"selected_protein\": " + f"{st.session_state['filtered_spectra']['filter_params']['selected_protein']}\n" + \
                      "\t\t \"scans_from_protein\": " + f"{scans_from_protein_str}\n" + \
                      "\t\t \"selected_peptide\": " + f"{st.session_state['filtered_spectra']['filter_params']['selected_peptide']}\n" + \

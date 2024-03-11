@@ -17,7 +17,7 @@ from fraggraph.frag_graph_viz import draw_graph3 as draw_graph
 
 from util.constants import DIV_COLOR
 
-def single_fraggraph(pep1: str, frag: str, verbose: bool = False) -> None:
+def single_fraggraph(pep1: str, frag: str, iso: str, verbose: bool = False) -> None:
     with st.status("Generating the fragmention graph...") as fg_gen_status:
         with st_stdout("info"):
             fg = FragGraph(fragmentation_parameters = frag)
@@ -111,7 +111,7 @@ def single_fraggraph(pep1: str, frag: str, verbose: bool = False) -> None:
 
     return
 
-def double_fraggraph(pep1: str, pep2: str, frag: str, verbose: bool = False) -> None:
+def double_fraggraph(pep1: str, pep2: str, frag: str, iso: str, verbose: bool = False) -> None:
     with st.status("Generating the fragmention graph...") as fg_gen_status:
         with st_stdout("info"):
             fg = FragGraph(fragmentation_parameters = frag)
@@ -224,7 +224,7 @@ def main(argv = None) -> None:
     tab3_desc = st.markdown("Description of results.")
 
     params = argv
-    params_keys = ["mzd", "cov", "pep1", "pep2", "frag"]
+    params_keys = ["mzd", "cov", "pep1", "pep2", "frag", "iso"]
     for key in params_keys:
         if key not in params:
             # this actually should never happen!
@@ -255,8 +255,8 @@ def main(argv = None) -> None:
         if params["pep1"] is None and params["pep2"] is None:
             st.error(f"Please select at least one peptide/peptidoform to run Fraggraph!", icon = "🚨")
         elif params["pep1"] is None and params["pep2"] is not None:
-            single_fraggraph(params["pep2"], params["frag"])
+            single_fraggraph(params["pep2"], params["frag"], params["iso"])
         elif params["pep2"] is None and params["pep1"] is not None:
-            single_fraggraph(params["pep1"], params["frag"])
+            single_fraggraph(params["pep1"], params["frag"], params["iso"])
         else:
-            double_fraggraph(params["pep1"], params["pep2"], params["frag"])
+            double_fraggraph(params["pep1"], params["pep2"], params["frag"], params["iso"])
