@@ -11,6 +11,7 @@ import streamlit.components.v1 as components
 # IMPORTANT: Some imports are function level because they require an active R
 # installation which will be checked on function call
 from util.redirect import st_stdout
+from util.tab4.read_proforma import read_proforma
 from fraggraph.combine_spectra import combine_spectra
 from fraggraph.frag_graph_fast import FragGraph
 from fraggraph.frag_graph_viz import draw_graph3 as draw_graph
@@ -205,22 +206,47 @@ def double_fraggraph(pep1: str, pep2: str, frag: str, iso: str, verbose: bool = 
         plots_header = st.subheader("Other Plots")
         plots_desc = st.markdown("Description text")
 
-        # plotting the spectrum
-        from fraggraph.frag_graph_report import plot_spectrum
+        # plotting the spectrum - OLD
+        #from fraggraph.frag_graph_report import plot_spectrum
+        #
+        #plot1_title = st.markdown("**Experimental Spectrum:**")
+        #plot1 = st.pyplot(plot_spectrum(fg), use_container_width = True)
+        #plot1_caption = st.markdown(f"**Figure 2:** caption.")
 
-        plot1_title = st.markdown("**Experimental Spectrum:**")
-        plot1 = st.pyplot(plot_spectrum(fg), use_container_width = True)
-        plot1_caption = st.markdown(f"**Figure 2:** caption.")
+        # plotting the spectrum
+        from fraggraph.frag_graph_report import plot_mass_spectrum
+        plot1a_title = st.markdown("**Experimental Spectrum 1:**")
+        plot1a = st.pyplot(plot_mass_spectrum(fg,
+                                              color_map = {"terminal": "black",
+                                                           "internal": "black",
+                                                           "unassigned": "black",
+                                                           "both": "black"}),
+                           use_container_width = True)
+        plot1a_caption = st.markdown(f"**Figure 2 (A):** caption.")
+
+        plot1b_title = st.markdown("**Experimental Spectrum 2:**")
+        plot1b = st.pyplot(plot_mass_spectrum(fg,
+                                              color_map = {"terminal": "red",
+                                                           "internal": "white",
+                                                           "unassigned": "white",
+                                                           "both": "white"}),
+                           use_container_width = True)
+        plot1b_caption = st.markdown(f"**Figure 2 (B):** caption.")
+
+        plot1c_title = st.markdown("**Experimental Spectrum 3:**")
+        plot1c = st.pyplot(plot_mass_spectrum(fg),
+                           use_container_width = True)
+        plot1c_caption = st.markdown(f"**Figure 2 (C):** caption.")
 
         # formatting
-        plot_col1, plot_col2 = st.columns(2)
+        plot_col11, plot_col12 = st.columns(2)
 
         # fragment coverage matrix pep1
         from plotnine import ggplot
         from fraggraph.frag_graph_report import draw_fragment_coverage_matrix
 
-        with plot_col1:
-            plot2_title = st.markdown("**Fragment Coverage Matrix Peptidoform 1:**")
+        with plot_col11:
+            plot2_title = st.markdown(f"**Fragment Coverage Matrix Peptidoform 1: {pep1}**")
             plot2 = st.pyplot(ggplot.draw(draw_fragment_coverage_matrix(fg,
                                                                         x = "intensity",
                                                                         x_min = 1,
@@ -230,11 +256,10 @@ def double_fraggraph(pep1: str, pep2: str, frag: str, iso: str, verbose: bool = 
             plot2_caption = st.markdown(f"**Figure 3:** caption.")
 
         # fragment coverage matrix pep2
-        from plotnine import ggplot
         from fraggraph.frag_graph_report import draw_fragment_coverage_matrix
 
-        with plot_col2:
-            plot3_title = st.markdown("**Fragment Coverage Matrix Peptidoform 2:**")
+        with plot_col12:
+            plot3_title = st.markdown(f"**Fragment Coverage Matrix Peptidoform 2: {pep2}**")
             plot3 = st.pyplot(ggplot.draw(draw_fragment_coverage_matrix(fg,
                                                                         x = "intensity",
                                                                         x_min = 1,
@@ -243,10 +268,70 @@ def double_fraggraph(pep1: str, pep2: str, frag: str, iso: str, verbose: bool = 
                               use_container_width = True)
             plot3_caption = st.markdown(f"**Figure 4:** caption.")
 
-        #### TODO ####
-        # the remaining plots would need a function that can determine modification sites
-        # based on the peptidoform str
-        st.error("SiteDeterminingPlots: NotImplementedException", icon = "🚨")
+        # site determining plots
+        mod_sites = read_proforma(pep2)
+        if len(mod_sites) > 2:
+            st.error("More than two modifications found, only peptidoforms with two modifications are supported!", icon = "🚨")
+        elif len(mod_sites) < 2:
+            st.error("Less than two modifications found, only peptidoforms with two modifications are supported!", icon = "🚨")
+        else:
+            # difference fragment coverage
+            from fraggraph.frag_graph_report import draw_fragment_coverage_matrix_difference
+
+            plot4_title = st.markdown("**Difference in Peptidoforms:**")
+            plot4 = st.pyplot(ggplot.draw(draw_fragment_coverage_matrix_difference(fg, fg,
+                                                                                   mod1_position = mod_sites[0],
+                                                                                   mod2_position = mod_sites[1],
+                                                                                   FG1_peptidoform_index = 0,
+                                                                                   FG2_peptidoform_index = 1)),
+                              use_container_width = True)
+            plot4_caption= st.markdown(f"**Figure 5:** caption.")
+
+            # site determining intensity comparison
+            from fraggraph.frag_graph_report import barplot_intensity_compare_site_determining
+
+            tmp_ggplots = barplot_intensity_compare_site_determining(fg, fg,
+                                                                     mod1_position = mod_sites[0],
+                                                                     mod2_position = mod_sites[1],
+                                                                     FG1_peptidoform_index = 0,
+                                                                     FG2_peptidoform_index = 1,
+                                                                     ions_type = "internal")
+            plot_col21, plot_col22 = st.columns(2)
+
+            with plot_col21:
+                plot5a_title = st.markdown("**intensity_compare_site_determinings1:**")
+                plot5a = st.pyplot(ggplot.draw(tmp_ggplots[0]),
+                                  use_container_width = True)
+                plot5a_caption= st.markdown(f"**Figure 6 (A):** caption.")
+
+            with plot_col22:
+                plot5b_title = st.markdown("**intensity_compare_site_determinings2:**")
+                plot5b = st.pyplot(ggplot.draw(tmp_ggplots[1]),
+                                  use_container_width = True)
+                plot5b_caption= st.markdown(f"**Figure 6 (B):** caption.")
+
+            # site determining spectra
+            from fraggraph.frag_graph_report import plot_mass_spectrum_site_determining
+            plot6a_title = st.markdown("**Experimental Spectrum 1:**")
+            plot6a = st.pyplot(plot_mass_spectrum(fg,
+                                                  color_map = {"terminal": "black",
+                                                               "internal": "black",
+                                                               "unassigned": "black",
+                                                               "both": "black"}),
+                               use_container_width = True)
+            plot6a_caption = st.markdown(f"**Figure 7 (A):** caption.")
+
+            plot6b_title = st.markdown("**Experimental Spectrum 2:**")
+            plot6b = st.pyplot(plot_mass_spectrum_site_determining(fg,
+                                                                   exclusion_list = ["internal", "both", "unassigned"]),
+                               use_container_width = True)
+            plot6b_caption = st.markdown(f"**Figure 7 (B):** caption.")
+
+            plot6c_title = st.markdown("**Experimental Spectrum 3:**")
+            plot6c = st.pyplot(plot_mass_spectrum_site_determining(fg,
+                                                                   exclusion_list = ["both", "unassigned"]),
+                               use_container_width = True)
+            plot6c_caption = st.markdown(f"**Figure 7 (C):** caption.")
 
     # file storage clean up
     try:
