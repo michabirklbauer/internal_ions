@@ -83,13 +83,13 @@ def main(argv = None) -> None:
                                      format = "%0.3f",
                                      help = "cov.")
 
-        fg_peptidoform1 = st.text_input("Specify a peptidoform to consider:",
+        fg_peptidoform1 = st.text_input("Specify an unmodified peptidoform to consider:",
                                         value = None,
                                         help = "Specify a peptidoform to consider for generating the fragment graph, e.g. " +
                                                "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE.",
                                         placeholder = "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE")
 
-        fg_peptidoform2 = st.text_input("Optionally, specify a peptidoform to compare to:",
+        fg_peptidoform2 = st.text_input("Optionally, specify a peptidoform (with modifications) to compare to:",
                                         value = None,
                                         help = "Specify a peptidoform to compare the fragment graph of the first peptidoform to, e.g. " +
                                                "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE.",
