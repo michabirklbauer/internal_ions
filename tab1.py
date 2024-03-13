@@ -72,72 +72,7 @@ def main(argv = None) -> None:
             read_identifications_successfully = st.success("Read all identifications successfully!")
             identifications_reading_status.update(label = f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state = "complete")
 
-    ttolerance = st.number_input("Tolerance in Da:",
-                                 key = "tolerance",
-                                 value = 0.02,
-                                 help = "Fragment ion mass tolerance in Dalton.")
-
-    deisotope = st.checkbox("Deisotope spectra",
-                            key = "deisotope",
-                            value = True,
-                            help = "Deisotope uploaded spectra or not.")
-
-    fions_text = st.markdown("Select which ion types your applied fragmentation method produced:")
-
-    # START Fragment types - List of booleans
-    fragannot_ions_col1, fragannot_ions_col2, fragannot_ions_col3 = st.columns(3)
-
-    with fragannot_ions_col2:
-
-        fions_checkbox_nterm = st.markdown("**N-terminal ions:**")
-
-        fA_ion = st.checkbox("A ions", key = "fA_ion")
-        fB_ion = st.checkbox("B ions", value = True, key = "fB_ion")
-        fC_ion = st.checkbox("C ions", key = "fC_ion")
-        fCdot_ion = st.checkbox("Cdot ions", key = "fCdot_ion")
-        fCm1_ion = st.checkbox("C-1 ions", key = "fCm1_ion")
-        fCp1_ion = st.checkbox("C+1 ions", key = "fCp1_ion")
-
-    with fragannot_ions_col1:
-
-        fions_checkbox_cterm = st.markdown("**C-terminal ions:**")
-
-        fX_ion = st.checkbox("X ions", key = "fX_ion")
-        fY_ion = st.checkbox("Y ions", value = True, key = "fY_ion")
-        #fZ_ion = st.checkbox("Z ions", key = "fZ_ion")
-        fZdot_ion = st.checkbox("Zdot ions", key = "fZdot_ion")
-        fZp1_ion = st.checkbox("Z+1 ions", key = "fZp1_ion")
-        fZp2_ion = st.checkbox("Z+2 ions", key = "fZp2_ion")
-        fZp3_ion = st.checkbox("Z+3 ions", key = "fZp3_ion")
-
-    with fragannot_ions_col3:
-
-        fions_desc_text = st.markdown("Here are some common selections for HCD/ETD/ect")
-        fions_desc_table = st.dataframe(pd.DataFrame({"Method": ["HCD", "ETD"],
-                                                      "Ions": ["b, y", "c, z"]}),
-                                        hide_index = True,
-                                        width = 500)
-
-    st.session_state["fragannot_ion_selection"] = [st.session_state.fA_ion,
-                                                   st.session_state.fB_ion,
-                                                   st.session_state.fC_ion,
-                                                   st.session_state.fCdot_ion,
-                                                   st.session_state.fCm1_ion,
-                                                   st.session_state.fCp1_ion,
-                                                   st.session_state.fX_ion,
-                                                   st.session_state.fY_ion,
-                                                   st.session_state.fZdot_ion,
-                                                   st.session_state.fZp1_ion,
-                                                   st.session_state.fZp2_ion,
-                                                   st.session_state.fZp3_ion]
-
-    st.session_state["fragannot_call_ion_selection"] = []
-    for i, sel in enumerate(st.session_state["fragannot_ion_selection"]):
-        if sel:
-            if FRAGANNOT_ION_NAMES[i] not in st.session_state["fragannot_call_ion_selection"]:
-                st.session_state["fragannot_call_ion_selection"].append(FRAGANNOT_ION_NAMES[i])
-
-    # END Fragment types
+    st.session_state["fragannot_call_ion_selection"] = st.session_state["selected_ions_nterm"] + st.session_state["selected_ions_cterm"]
 
     charges_str = st.text_input("Charges to consider [comma delimited]:",
                                 value = "-1, +1",
@@ -148,6 +83,11 @@ def main(argv = None) -> None:
                                value = "H2O",
                                help = "Neutral losses to consider for fragment ions. Multiple entries should be delimited by commas!")
     st.session_state["losses"] = [loss.strip() for loss in losses_str.split(",")]
+
+    deisotope = st.checkbox("Deisotope spectra",
+                            key = "deisotope",
+                            value = True,
+                            help = "Deisotope uploaded spectra or not.")
 
     ############################################################################
     st.subheader("Annotation", divider = DIV_COLOR)
