@@ -8,6 +8,7 @@
 #####################################################
 """
 
+import pandas as pd
 import streamlit as st
 
 #import tabs
@@ -15,6 +16,9 @@ from tab1 import main as tab1_main
 from tab2 import main as tab2_main
 from tab3 import main as tab3_main
 from tab4 import main as tab4_main
+
+# import constants
+from util.constants import DIV_COLOR
 
 # main page content
 def main_page():
@@ -95,24 +99,66 @@ def main(argv = None) -> None:
                                      "About": about_str}
                        )
 
-    title = st.sidebar.title("Internal Ions")
+    with st.sidebar:
 
-    logo = st.sidebar.image("img/logo_1.png", caption = "Logo")
+        title = st.title("Internal Ions")
 
-    doc = st.sidebar.markdown(about_str)
+        logo = st.image("img/logo_1.png", caption = "Logo")
 
-    contact_str = \
-        "**Contact:** [Arthur Grimaud](mailto:agrimaud@bmb.sdu.dk), [Veit Schwämmle](veits@bmb.sdu.dk), " + \
-        "[Caroline Lennartsson](mailto:caroline.lennartsson@cpr.ku.dk), [Louise Buur](louise.buur@fh-hagenberg.at), " + \
-        "[Micha Birklbauer](mailto:micha.birklbauer@gmail.com), [Vladimir Gorshkov](homer2k@gmail.com), " + \
-        "[Zoltan Udvardy](zoltan.udvardy.ipbs@gmail.com)"
-    contact = st.sidebar.markdown(contact_str)
+        doc = st.markdown(about_str)
 
-    license_str = "**License:** ???"
-    license = st.sidebar.markdown(license_str)
+    ############################################################################
+        input_header = st.subheader("Parameters", divider = DIV_COLOR)
+        input_desc = st.markdown("These parameters will be used globally across the internal ions explorer.")
 
-    project_str = "**Project Page:** [GitHub](https://github.com/michabirklbauer/internal-ions/)"
-    project = st.sidebar.markdown(project_str)
+        # tolerance
+        ttolerance_desc = st.markdown("**Tolerance**")
+        ttolerance = st.number_input("Tolerance in Da:",
+                                 key = "tolerance",
+                                 value = 0.02,
+                                 help = "Fragment ion mass tolerance in Dalton.")
+
+        # ions
+        fions_selectbox_desc = st.markdown("**Ions**")
+        fions_nterm_choices = ["a", "b", "c", "cdot", "c-1", "c+1"]
+        fions_nterm_mapping = {"a": "A ions", "b": "B ions", "c": "C ions",
+                               "cdot": "Cdot ions", "c-1": "C-1 ions", "c+1": "C+1 ions"}
+        fions_selectbox_nterm = st.multiselect("Select which n-terminal ions to consider:",
+                                               options = fions_nterm_choices,
+                                               default = "b",
+                                               format_func = lambda x: fions_nterm_mapping[x],
+                                               key = "selected_ions_nterm",
+                                               help = "The c-terminal ions considered by Fragannot and Fraggraph.")
+        fions_cterm_choices = ["x", "y", "zdot", "z+1", "z+2", "z+3"]
+        fions_cterm_mapping = {"x": "X ions", "y": "Y ions", "zdot": "Zdot ions",
+                               "z+1": "Z+1 ions", "z+2": "Z+2 ions", "z+3": "Z+3 ions"}
+        fions_selectbox_cterm = st.multiselect("Select which c-terminal ions to consider:",
+                                               options = fions_cterm_choices,
+                                               default = "y",
+                                               format_func = lambda x: fions_cterm_mapping[x],
+                                               key = "selected_ions_cterm",
+                                               help = "The c-terminal ions considered by Fragannot and Fraggraph.")
+        fions_desc_text = st.markdown("Here are some common selections for HCD/ETD/etc...")
+        fions_desc_table = st.dataframe(pd.DataFrame({"Method": ["HCD", "ETD"],
+                                                      "Ions": ["b, y", "c, z"]}),
+                                        hide_index = True,
+                                        use_container_width = True)
+
+    ############################################################################
+        contact_header = st.subheader("About the Project", divider = DIV_COLOR)
+
+        contact_str = \
+            "**Contact:**\n- [Arthur Grimaud](mailto:agrimaud@bmb.sdu.dk)\n- [Veit Schwämmle](veits@bmb.sdu.dk)\n" + \
+            "- [Caroline Lennartsson](mailto:caroline.lennartsson@cpr.ku.dk)\n- [Louise Buur](louise.buur@fh-hagenberg.at)\n" + \
+            "- [Micha Birklbauer](mailto:micha.birklbauer@gmail.com)\n- [Vladimir Gorshkov](homer2k@gmail.com)\n" + \
+            "- [Zoltan Udvardy](zoltan.udvardy.ipbs@gmail.com)"
+        contact = st.markdown(contact_str)
+
+        license_str = "**License:** [???]()"
+        license = st.markdown(license_str)
+
+        project_str = "**Project Page:** [GitHub](https://github.com/michabirklbauer/internal-ions/)"
+        project = st.markdown(project_str)
 
     main_page()
 
