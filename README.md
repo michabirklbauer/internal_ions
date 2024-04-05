@@ -30,4 +30,8 @@
 - Install requirements!
 - Run `streamlit run streamlit_app.py`
 
+## Running the App via Docker
+
+- Running this app via Docker is possible with `docker run -p 8501:8501 michabirklbauer/internalionsv2:latest`
+
 ## Server -> [89.58.32.151](http://89.58.32.151/)
