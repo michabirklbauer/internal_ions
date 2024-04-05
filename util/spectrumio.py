@@ -159,7 +159,6 @@ def read_filtered_spectra(filename: str | BinaryIO, name: str) -> Dict[str, Any]
                      "min_rt": None,
                      "max_rt": None,
                      "max_charge": None,
-                     "max_isotope": None,
                      "selected_protein": None,
                      "scans_from_protein": [],
                      "selected_peptide": None,

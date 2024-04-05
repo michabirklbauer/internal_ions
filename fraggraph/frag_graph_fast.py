@@ -502,6 +502,7 @@ class FragGraph(nx.DiGraph):
                         + [peptidoform_index],
                     )
                     self.add_edge(parent, node_id)
+                    self.update_successor_peptidoforms(node_id, peptidoform_index)
                 else:
                     self.add_node(
                         node_id,
@@ -517,7 +518,7 @@ class FragGraph(nx.DiGraph):
 
                     self.add_intermediate_1_nodes(node_id, peptidoform)
 
-                    pbar.update(1)
+                pbar.update(1)
 
             # Add C fragments
             for pos in c_fragment_range:
@@ -543,7 +544,7 @@ class FragGraph(nx.DiGraph):
                         + [peptidoform_index],
                     )
                     self.add_edge(parent, node_id)
-
+                    self.update_successor_peptidoforms(node_id, peptidoform_index)
                 else:
                     self.add_node(
                         node_id,
@@ -559,7 +560,7 @@ class FragGraph(nx.DiGraph):
 
                     self.add_intermediate_1_nodes(node_id, peptidoform)
 
-                    pbar.update(1)
+                pbar.update(1)
 
             # Add internal fragments (if allowed)
             if not self.terminals_only:
@@ -599,7 +600,16 @@ class FragGraph(nx.DiGraph):
 
                         self.add_intermediate_1_nodes(node_id, peptidoform)
 
-                        pbar.update(1)
+                    pbar.update(1)
+
+    def update_successor_peptidoforms(self, node_id, peptidoform_index):
+        successors = self.successors(node_id)
+        for successor in successors:
+            self.set_node_attributes(
+                successor,
+                peptidoforms=self.nodes[successor]["peptidoforms"] + [peptidoform_index],
+            )
+            self.update_successor_peptidoforms(successor, peptidoform_index)
 
     # ---------------------------------------------------------------------------- #
 
@@ -1708,6 +1718,16 @@ class FragGraph(nx.DiGraph):
 
         print(total_removed, " nodes have been removed based on best isotopic fit")
 
+    def get_peak_associated_peptidofor(self, peak_node):
+        """return the peptidoform associated to a peak node"""
+        peptidoforms = []
+        for node in self.get_leaf_nodes_linked_to_peak(peak_node):
+            for peptidoform in self.peptidoforms:
+                if peptidoform not in peptidoforms:
+                    peptidoforms.append(peptidoform)
+
+        return peptidoforms
+
     def viz_fragment_coverage_and_charge(self):
         """plotly matrix that displays the coverage of terminal fragment of the peptide sequence
         each fragment type is a row and the columns represent the amino acid position in the peptide sequence
@@ -2384,7 +2404,7 @@ class FragGraph(nx.DiGraph):
         return leaf_nodes
 
     def get_peak_table(self):
-        # create atabel where each line is an experimental peak in the sectrum
+        # create a table where each line is an experimental peak in the spectrum
         df = pd.DataFrame(
             columns=[
                 "mz",
@@ -2393,11 +2413,16 @@ class FragGraph(nx.DiGraph):
                 "number_leaf_nodes",
                 "terminal",
                 "internal",
+                "proteoform_indices", # Replace "sdi" with "proteoform_indices"
             ]
         )
 
         for node in self.nodes:
-            if self.nodes[node]["node_type"] == "peak":
+            if (
+                self.nodes[node]["node_type"] == "peak"
+                and self.nodes[node]["intensity"] >= self.min_it
+            ):
+                peptidoform_indices = []
                 # get the leaf nodes
                 leaf_nodes = self.get_leaf_nodes_linked_to_peak(node)
 
@@ -2417,6 +2442,10 @@ class FragGraph(nx.DiGraph):
                         terminal += 1
                     if self.nodes[leaf_node]["frag_dir"] == "I":
                         internal += 1
+
+                    peptidoform_indices.append(
+                        self.nodes[leaf_node]["peptidoforms"]
+                    )
 
 
                 df = pd.concat(
