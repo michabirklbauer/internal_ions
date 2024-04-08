@@ -2,8 +2,6 @@
 layout: default
 ---
 
-# internal_ions
-
 [How to write docs](./howto.html)
 
 ## Setup
