@@ -147,18 +147,21 @@ def main(argv = None) -> None:
     ############################################################################
         contact_header = st.subheader("About the Project", divider = DIV_COLOR)
 
+        documentation_str = "**Documentation:** [Documentation](https://michabirklbauer.github.io/internal-ions/)"
+        documentation = st.markdown(documentation_str)
+
+        project_str = "**Project Page:** [GitHub](https://github.com/michabirklbauer/internal-ions/)"
+        project = st.markdown(project_str)
+
+        license_str = "**License:** [???]()"
+        license = st.markdown(license_str)
+
         contact_str = \
             "**Contact:**\n- [Arthur Grimaud](mailto:agrimaud@bmb.sdu.dk)\n- [Veit Schwämmle](veits@bmb.sdu.dk)\n" + \
             "- [Caroline Lennartsson](mailto:caroline.lennartsson@cpr.ku.dk)\n- [Louise Buur](louise.buur@fh-hagenberg.at)\n" + \
             "- [Micha Birklbauer](mailto:micha.birklbauer@gmail.com)\n- [Vladimir Gorshkov](homer2k@gmail.com)\n" + \
             "- [Zoltan Udvardy](zoltan.udvardy.ipbs@gmail.com)"
         contact = st.markdown(contact_str)
-
-        license_str = "**License:** [???]()"
-        license = st.markdown(license_str)
-
-        project_str = "**Project Page:** [GitHub](https://github.com/michabirklbauer/internal-ions/)"
-        project = st.markdown(project_str)
 
     main_page()
 
