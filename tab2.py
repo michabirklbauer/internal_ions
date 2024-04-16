@@ -74,67 +74,98 @@ def main(argv = None) -> None:
             filter_dfs_desc_text = st.markdown("Results can be further filtered with the filtering options below (optional).")
 
             # START filtering options
-            start_seq_length, end_seq_length = st.select_slider("Peptide sequence lenght:",
-                                                            options = range(0, 1001),
-                                                            value = (0, 1000),
-                                                            help = "For \"Spectrum-centric Statistics\" only spectra with peptides withing range are considered.")
+            filter_select_col1, filter_select_col2 = st.columns(2)
 
-            start_frag_len, end_frag_len = st.select_slider("Fragment ion sequence lenght:",
-                                                            options = range(0, 1001),
-                                                            value = (0, 1000),
-                                                            help = "For \"Fragment-centric Statistics\" only fragments within in range are considered.")
+            with filter_select_col1:
+                istart_seq_length = st.number_input("Minimum peptide sequence length:",
+                                                    min_value = 0,
+                                                    max_value = 1000,
+                                                    value = 0,
+                                                    step = 1,
+                                                    help = "For \"Spectrum-centric Statistics\" only spectra with peptides withing range are considered.")
 
-            start_mz, end_mz = st.select_slider("Select m/z range for internal fragments:",
-                                                options = range(0, 10001),
-                                                value = (0, 10000),
-                                                help = "For \"Fragment-centric Statistics\" only fragments within in range are considered.")
+                istart_frag_length = st.number_input("Minimum fragment ion sequence lenght:",
+                                                     min_value = 0,
+                                                     max_value = 1000,
+                                                     value = 0,
+                                                     step = 1,
+                                                     help = "For \"Fragment-centric Statistics\" only fragments within range are considered.")
 
-            start_int, end_int = st.select_slider("Select intensity range for internal fragments:",
-                                                  options = range(0, 1000001),
-                                                  value =(0, 1000000),
-                                                  help = "For \"Fragment-centric Statistics\" only fragments within in range are considered.")
+                istart_mz = st.number_input("Minimum m/z for internal fragments:",
+                                            min_value = 0,
+                                            max_value = 10000,
+                                            value = 0,
+                                            step = 1,
+                                            help = "For \"Fragment-centric Statistics\" only fragments within range are considered.")
 
-            ion_selection_text = st.markdown("Select which ions to analyse:")
+                istart_int = st.number_input("Minimum intensity for internal fragments:",
+                                             min_value = 0,
+                                             max_value = 1000000,
+                                             value = 0,
+                                             step = 1,
+                                             help = "For \"Fragment-centric Statistics\" only fragments within range are considered.")
 
-            ions_col1, ions_col2, ions_col3 = st.columns(3)
+            with filter_select_col2:
+                iend_seq_length = st.number_input("Maximum peptide sequence length:",
+                                                  min_value = 0,
+                                                  max_value = 1000,
+                                                  value = 1000,
+                                                  step = 1,
+                                                  help = "For \"Spectrum-centric Statistics\" only spectra with peptides withing range are considered.")
 
-            with ions_col1:
+                iend_frag_length = st.number_input("Maximum fragment ion sequence lenght:",
+                                                   min_value = 0,
+                                                   max_value = 1000,
+                                                   value = 1000,
+                                                   step = 1,
+                                                   help = "For \"Fragment-centric Statistics\" only fragments within range are considered.")
 
-                ions_checkbox_cterm = st.markdown("**C-terminal ions:**")
+                iend_mz = st.number_input("Maximum m/z for internal fragments:",
+                                          min_value = 0,
+                                          max_value = 10000,
+                                          value = 10000,
+                                          step = 1,
+                                          help = "For \"Fragment-centric Statistics\" only fragments within range are considered.")
 
-                X_ion = st.checkbox("X ions", value = True)
-                Y_ion = st.checkbox("Y ions", value = True)
-                Z_ion = st.checkbox("Z ions", value = True)
-                Zdot_ion = st.checkbox("Zdot ions", value = True)
-                Zp1_ion = st.checkbox("Z+1 ions", value = True)
-                Zp2_ion = st.checkbox("Z+2 ions", value = True)
-                Zp3_ion = st.checkbox("Z+3 ions", value = True)
+                iend_int = st.number_input("Maximum intensity for internal fragments:",
+                                           min_value = 0,
+                                           max_value = 1000000,
+                                           value = 1000000,
+                                           step = 1,
+                                           help = "For \"Fragment-centric Statistics\" only fragments within range are considered.")
 
-            with ions_col2:
+            start_seq_length = istart_seq_length if istart_seq_length < iend_seq_length else iend_seq_length
+            end_seq_length = iend_seq_length if iend_seq_length > istart_seq_length else istart_seq_length
+            start_frag_length = istart_frag_length if istart_frag_length < iend_frag_length else iend_frag_length
+            end_frag_length = iend_frag_length if iend_frag_length > istart_frag_length else istart_frag_length
+            start_mz = istart_mz if istart_mz < iend_mz else iend_mz
+            end_mz = iend_mz if iend_mz > istart_mz else istart_mz
+            start_int = istart_int if istart_int < iend_int else iend_int
+            end_int = iend_int if iend_int > istart_int else istart_int
 
-                ions_checkbox_nterm = st.markdown("**N-terminal ions:**")
+            N_ion = st.checkbox("Show non-annotated ions", value = True)
 
-                A_ion = st.checkbox("A ions", value = True)
-                B_ion = st.checkbox("B ions", value = True)
-                C_ion = st.checkbox("C ions", value = True)
-                Cdot_ion = st.checkbox("Cdot ions", value = True)
-                Cm1_ion = st.checkbox("C-1 ions", value = True)
-                Cp1_ion = st.checkbox("C+1 ions", value = True)
-
-            with ions_col3:
-
-                ions_checkbox_notannotated = st.markdown("**Non-annotated ions:**")
-
-                N_ion = st.checkbox("Non-annotated ions", value = True)
-
-            ion_filter_param = [N_ion, A_ion, B_ion, C_ion, Cdot_ion, Cm1_ion, Cp1_ion, X_ion, Y_ion, Z_ion, Zdot_ion, Zp1_ion, Zp2_ion, Zp3_ion]
+            ion_filter_param = [N_ion,
+                                "a" in st.session_state["selected_ions_nterm"],
+                                "b" in st.session_state["selected_ions_nterm"],
+                                "c" in st.session_state["selected_ions_nterm"],
+                                "cdot" in st.session_state["selected_ions_nterm"],
+                                "c-1" in st.session_state["selected_ions_nterm"],
+                                "c+1" in st.session_state["selected_ions_nterm"],
+                                "x" in st.session_state["selected_ions_cterm"],
+                                "y" in st.session_state["selected_ions_cterm"],
+                                False, # z ions, this is a relict
+                                "zdot" in st.session_state["selected_ions_cterm"],
+                                "z+1" in st.session_state["selected_ions_cterm"],
+                                "z+2" in st.session_state["selected_ions_cterm"],
+                                "z+3" in st.session_state["selected_ions_cterm"]]
             # END filtering options
 
             filtered_fragments_df, filtered_spectra_df = filter_dataframes(st.session_state["dataframes"],
                                                                            start_seq_length,
                                                                            end_seq_length,
-                                                                           start_frag_len,
-                                                                           end_frag_len,
+                                                                           start_frag_length,
+                                                                           end_frag_length,
                                                                            start_mz,
                                                                            end_mz,
                                                                            start_int,
