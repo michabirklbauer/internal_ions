@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-
 import numpy as np
 import pandas as pd
 
 import logomaker
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-import plotly.figure_factory as ff
+#import plotly.figure_factory as ff
 
 def common_type_gen(fragments_dataframe: pd.DataFrame) -> pd.Series:
 
@@ -21,15 +20,36 @@ def common_type_gen(fragments_dataframe: pd.DataFrame) -> pd.Series:
 def common_type_hist(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     common_type = common_type_gen(fragments_dataframe)
-
-    return go.Figure([go.Histogram(x = common_type)])
+    
+    fig = go.Figure([go.Histogram(x = common_type)])
+    fig.update_layout(xaxis=dict(gridcolor='transparent'),
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        )
+    )
+    return fig
 
 def common_type_pie(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     common_type = common_type_gen(fragments_dataframe)
     counts = common_type.value_counts()
+    
+    pie_fig = go.Figure([go.Pie(labels=counts.keys(), values=counts)])
+    pie_fig.update_layout(
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        )
+    )
 
-    return go.Figure([go.Pie(labels = counts.keys(), values = counts)])
+    return pie_fig
 
 def log_ion_intens_dist(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
@@ -42,9 +62,15 @@ def log_ion_intens_dist(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
-                      title = "Histograms of logarithmic intensities per ion type",
-                      xaxis_title = "log2(intensity)",
-                      yaxis_title = "probability")
+                      xaxis_title = "Log2(Intensity)",
+                      yaxis_title = "Probability", 
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        ))
 
     return fig
 
@@ -59,9 +85,15 @@ def rel_ion_intens_perc(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
-                      title = "Histograms of relative intensities per ion type",
-                      xaxis_title = "intensity",
-                      yaxis_title = "probability")
+                      xaxis_title = "Intensity",
+                      yaxis_title = "Probability", 
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        ))
 
     return fig
 
@@ -76,9 +108,15 @@ def rel_ion_intens_prop(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
-                      title = "Histograms of relative intensities to base peak per ion type",
-                      xaxis_title = "percentage per base peak",
-                      yaxis_title = "probability")
+                      xaxis_title = "Percentage per base peak",
+                      yaxis_title = "Probability",
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        ))
 
     return fig
 
@@ -93,9 +131,15 @@ def mz_dist_ion_type(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
-                      title = "Histograms of mz values per ion type",
-                      xaxis_title = "mz",
-                      yaxis_title = "probability")
+                      xaxis_title = "m/z",
+                      yaxis_title = "Probability", 
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        ))
 
     return fig
 
@@ -110,9 +154,15 @@ def per_spec_ion_type(spectra_dataframe: pd.DataFrame) -> go.Figure:
 
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
-                      title = "Histograms of percentages of ion type per spectrum",
                       xaxis_title = "Percentage",
-                      yaxis_title = "probability")
+                      yaxis_title = "Probability", 
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        ))
 
     return fig
 
@@ -127,9 +177,15 @@ def per_spec_ion_intens(spectra_dataframe: pd.DataFrame) -> go.Figure:
 
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
-                      title = "Histograms of percentages of ion type per spectrum",
                       xaxis_title = "Percentage",
-                      yaxis_title = "probability")
+                      yaxis_title = "Probability", 
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        ))
 
     return fig
 
@@ -143,9 +199,15 @@ def log_ion_intens_ridge(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     fig.update_traces(orientation = "h", side = "positive", width = 3, points = False)
     fig.update_layout(barmode = "group",
-                      title = "Ridgelines of logarithmic intensities per ion type",
-                      xaxis_title = "log2(intensity)",
-                      yaxis_title = "probability")
+                      xaxis_title = "Log2(Intensity)",
+                      yaxis_title = "Probability", 
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        ))
 
     return fig
 
@@ -159,9 +221,15 @@ def rel_ion_intens_ridge(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     fig.update_traces(orientation = "h", side = "positive", width = 3, points = False)
     fig.update_layout(barmode = "group",
-                      title = "Ridgelines of relative intensities per ion type",
-                      xaxis_title = "intensity",
-                      yaxis_title = "probability")
+                      xaxis_title = "Intensity",
+                      yaxis_title = "Probability", 
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        ))
 
     return fig
 
@@ -175,9 +243,15 @@ def rel_ion_intens_prop_ridge(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     fig.update_traces(orientation = "h", side = "positive", width = 3, points = False)
     fig.update_layout(barmode = "group",
-                      title = "Ridgelines of relative intensities to base peak per ion type",
-                      xaxis_title = "intensity",
-                      yaxis_title = "probability")
+                      xaxis_title = "Intensity",
+                      yaxis_title = "Probability", 
+        margin=dict(
+            t=0,  
+            b=0, 
+            l=0,  
+            r=0,  
+            pad=0  
+        ))
 
     return fig
 
@@ -187,7 +261,7 @@ def logo_of_fraction(spectra_dataframe: pd.DataFrame,
                      max_length: int = 10,
                      min_length: int = 10) -> plt.figure:
 
-    fig1, ax1 = plt.subplots(facecolor = "white", figsize = (8, 4))
+    fig1, ax1 = plt.subplots(facecolor = "white", figsize = (8, 4), dpi=1000) # dpi = dot per inch
 
     if topn == 0:
         df = fragments_dataframe.frag_seq
@@ -222,7 +296,8 @@ def logo_of_fraction(spectra_dataframe: pd.DataFrame,
                    ax = ax1,
                    color_scheme = "NajafabadiEtAl2017",
                    vpad = 0.1,
-                   width = 0.8
+                   width = 0.8, 
+                   show_spines=False 
                   )
     ax1.set_xlabel("Position in subset")
     ax1.set_ylabel("Amino acid frequency")

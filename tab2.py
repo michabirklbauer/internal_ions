@@ -63,7 +63,7 @@ def main(argv = None) -> None:
             st.success(f"Loaded results from {loaded_from_which_files}!")
 
     ############################################################################
-            show_previews_header = st.subheader("Results Viewer", divider = DIV_COLOR)
+            show_previews_header = st.subheader("View Result", divider = DIV_COLOR)
             frag_preview_text = st.markdown("Preview of the fragment-centric dataframe:")
             frag_preview = st.dataframe(st.session_state["dataframes"][0], height = 200)
             spec_preview_text = st.markdown("Preview of the spectrum-centric dataframe:")
@@ -179,30 +179,30 @@ def main(argv = None) -> None:
             frag_center_plot_col1_1, frag_center_plot_col1_2 = st.columns(2)
 
             with frag_center_plot_col1_1:
-                plot1_title = st.markdown("**Histogram of ion types:**")
+                plot1_title = st.markdown("**Distribution of Ion Types**")
                 plot1 = st.plotly_chart(common_type_hist(filtered_fragments_df), use_container_width = True)
-                plot1_caption = st.markdown(f"**Figure 1:** caption.")
+                plot1_caption = st.markdown(f"**Figure 1:** Histogram illustrating the frequency distribution of ion types present in the dataset.")
 
             with frag_center_plot_col1_2:
-                plot2_title = st.markdown("**Pie chart of ion types:**")
+                plot2_title = st.markdown("**Ion Type Proportions**")
                 plot2 = st.plotly_chart(common_type_pie(filtered_fragments_df), use_container_width = True)
-                plot2_caption = st.markdown(f"**Figure 2:** caption.")
+                plot2_caption = st.markdown(f"**Figure 2:** Pie chart displaying the proportional composition of ion types within the dataset.")
 
-            plot3_title = st.markdown("**Histogram of m/z per ion type:**")
+            plot3_title = st.markdown("**Distribution of m/z Values Across Ion Types**")
             plot3 = st.plotly_chart(mz_dist_ion_type(filtered_fragments_df), use_container_width = True)
-            plot3_caption = st.markdown(f"**Figure 3:** caption.")
+            plot3_caption = st.markdown(f"**Figure 3:** Histogram depicting the distribution of mass-to-charge ratio (m/z) values across different ion types.")
 
             frag_center_plot_col3_1, frag_center_plot_col3_2 = st.columns(2)
 
             with frag_center_plot_col3_1:
-                plot4_title = st.markdown("**Log Intensities Distribution:**")
+                plot4_title = st.markdown("**Distribution of the Log Intensity**")
                 plot4 = st.plotly_chart(rel_ion_intens_perc(filtered_fragments_df), use_container_width = True)
-                plot4_caption = st.markdown(f"**Figure 4:** caption.")
+                plot4_caption = st.markdown(f"**Figure 4:** Distribution of log-transformed intensity values.")
 
             with frag_center_plot_col3_2:
-                plot5_title = st.markdown("**Relative Log Intensities:**")
+                plot5_title = st.markdown("**Relative Log Intensities**")
                 plot5 = st.plotly_chart(rel_ion_intens_ridge(filtered_fragments_df), use_container_width = True)
-                plot5_caption = st.markdown(f"**Figure 5:** caption.")
+                plot5_caption = st.markdown(f"**Figure 5:** Distribution of log-transformed intensities relative to their respective scales.")
 
     ############################################################################
             spec_center_stats_header = st.subheader("Spectrum-centric Statistics", divider = DIV_COLOR)
@@ -211,9 +211,9 @@ def main(argv = None) -> None:
             spec_center_plot_col1_1, spec_center_plot_col1_2 = st.columns(2)
 
             with spec_center_plot_col1_1:
-                plot6_title = st.markdown("**Ion type per spectrum:**")
+                plot6_title = st.markdown("**Ion Type Distribution Per Spectra**")
                 plot6 = st.plotly_chart(per_spec_ion_type(filtered_spectra_df), use_container_width = True)
-                plot6_caption = st.markdown(f"**Figure 6:** caption.")
+                plot6_caption = st.markdown(f"**Figure 6:** Distribution of ion types within each spectrum, providing insights into the diversity and abundance of ions detected across the dataset.")
 
             with spec_center_plot_col1_2:
                 plot7_title = st.markdown("**Log Intensities:**")
