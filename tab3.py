@@ -28,7 +28,7 @@ def main(argv = None) -> None:
 
         scan_nr = st.selectbox("Select a scan number to display the corresponding spectrum:",
                                st.session_state["spectra"]["spectra"].keys(),
-                               index = None,
+                               index=0,
                                help = "Select a scan number that is available in the uploaded .mgf from the drop down to display the corresponding spectrum.")
 
         if scan_nr is not None:
