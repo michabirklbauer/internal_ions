@@ -49,6 +49,7 @@ def main(argv = None) -> None:
                          "\t\t \"min_rt\": " + f"{st.session_state['filtered_spectra']['filter_params']['min_rt']}\n" + \
                          "\t\t \"max_rt\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_rt']}\n" + \
                          "\t\t \"max_charge\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_charge']}\n" + \
+                         "\t\t \"max_isotope\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_isotope']}\n" + \
                          "\t\t \"selected_protein\": " + f"{st.session_state['filtered_spectra']['filter_params']['selected_protein']}\n" + \
                          "\t\t \"scans_from_protein\": " + f"{scans_from_protein_str}\n" + \
                          "\t\t \"selected_peptide\": " + f"{st.session_state['filtered_spectra']['filter_params']['selected_peptide']}\n" + \
@@ -83,30 +84,23 @@ def main(argv = None) -> None:
                                      format = "%0.3f",
                                      help = "cov.")
 
-        fg_peptidoform1 = st.text_input("Specify an unmodified peptidoform to consider:",
-                                        value = None,
+        fg_peptidoform1 = st.text_input("Specify a peptidoform to consider:",
+                                        value = "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE",
                                         help = "Specify a peptidoform to consider for generating the fragment graph, e.g. " +
                                                "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE.",
                                         placeholder = "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE")
 
-        fg_peptidoform2 = st.text_input("Optionally, specify a peptidoform (with modifications) to compare to:",
+        fg_peptidoform2 = st.text_input("Optionally, specify a peptidoform to compare to:",
                                         value = None,
                                         help = "Specify a peptidoform to compare the fragment graph of the first peptidoform to, e.g. " +
                                                "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE.",
                                         placeholder = "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE")
 
-        fg_fragmentation = st.selectbox("Specify the fragmentation method:",
-                                        options = ["ETD", "ETD_deconv", "HCD", "CID",
-                                                   "ETHCD", "ETHCD_deconv", "DECOY_high_res", "DECOY_high_res_deconv"],
-                                        index = 2,
-                                        help = "Specify the fragmention method used.")
-
-        fg_max_isotope = st.number_input("Select the maximum isotope for a spectrum:",
-                                         min_value = 1,
-                                         max_value = 20,
-                                         value = 4,
-                                         step = 1,
-                                         help = "The maximum isotope.")
+        # fg_fragmentation = st.selectbox("Specify the fragmentation method:",
+        #                                 options = ["ETD", "ETD_deconv", "HCD", "CID",
+        #                                            "ETHCD", "ETHCD_deconv", "DECOY_high_res", "DECOY_high_res_deconv"],
+        #                                 index = 2,
+        #                                 help = "Specify the fragmention method used.")
 
         fg_run_l, fg_run_center, fg_run_r = st.columns(3)
 
@@ -117,15 +111,13 @@ def main(argv = None) -> None:
             fraggraph_main({"mzd": fg_mzd,
                             "cov": fg_cov,
                             "pep1": fg_peptidoform1,
-                            "pep2": fg_peptidoform2,
-                            "frag": fg_fragmentation,
-                            "iso": fg_max_isotope})
+                            "pep2": fg_peptidoform2})
 
     else:
         st.info("No spectra selected! Please upload a file in the \"Annotation\" tab and select the " +
                 "desired spectra in the \"Spectrum\" tab or upload a file here.")
 
-        filtered_spectrum_file = st.file_uploader("Upload a spectrum file (we assume all spectra are MS2-level):",
+        filtered_spectrum_file = st.file_uploader("Upload spectrum file:",
                                                   key = "filtered_spectrum_file",
                                                   type = ["mgf"],
                                                   on_change = reset_filtered_spectra,

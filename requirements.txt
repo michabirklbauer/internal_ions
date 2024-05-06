@@ -26,3 +26,4 @@ scipy
 statsmodels
 tqdm
 brain_isotopic_distribution
+streamlit_plotly_events
