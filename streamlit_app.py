@@ -32,7 +32,7 @@ def main_page():
     description = st.markdown(general_description)
 
     # set tab names here
-    tab1, tab2, tab3, tab4 = st.tabs(["Annotation", "Statistics", "Spectrum", "Fraggraph"])
+    tab1, tab2, tab3 = st.tabs(["Annotation", "Statistics", "Spectrum & Fraggraph"])
 
     div = \
     """
@@ -69,18 +69,6 @@ def main_page():
 
     with tab3:
         tab3_main()
-
-    div = \
-    """
-    #####################################################
-    ##                                                 ##
-    ##                   -- TAB 4 --                   ##
-    ##                                                 ##
-    #####################################################
-    """
-
-    # with tab4:
-    #     tab4_main()
 
 # side bar and main page loader
 def main(argv = None) -> None:
