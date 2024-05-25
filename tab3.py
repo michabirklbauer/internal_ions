@@ -5,6 +5,7 @@ import json
 import streamlit as st
 
 from streamlit_plotly_events import plotly_events
+from fraggraph.combine_spectra import combine_spectra
 
 from util.redirect import st_stdout
 from util.spectrumio import filter_spectra
@@ -12,7 +13,6 @@ from util.streamlit_utils import spectra_to_mgf_stream
 from util.tab3.plots import plot_spectrum
 from util.tab3.plots import plot_consensus_spectrum
 from util.tab3.plots import plot_spectra_chromatogram
-from fraggraph.combine_spectra import combine_spectra
 from util.tab4.fraggraph import main as fraggraph_main
 
 from util.constants import DIV_COLOR
@@ -20,7 +20,7 @@ from util.constants import DIV_COLOR
 def main(argv = None) -> None:
 
     ############################################################################
-    
+    header = st.subheader("TITLE", divider = DIV_COLOR)
     tab3_desc = st.markdown("Reannotation of fragments on a given spectrum (or merged spectra) using fragmentation graph.")
 
     ############################################################################
@@ -29,38 +29,30 @@ def main(argv = None) -> None:
     if "spectra" in st.session_state:
         st.success(f"Spectra from file \"{st.session_state['spectra']['name']}\" were successfully loaded!")
 
-    
-
     ############################################################################
         spectrum_selection_header = st.subheader("Spectrum Selector", divider = DIV_COLOR)
         spectrum_selection_text = st.markdown("Using the following fields you can filter your spectra for further analyis.")
 
-        
-        
         # Plot chromatogram
         spectra_chromatogram = plot_spectra_chromatogram(st.session_state["spectra"]["spectra"])
-        spectra_chromatogram_selection = plotly_events(spectra_chromatogram, select_event=True)
-        
-        if spectra_chromatogram_selection is not None and len(spectra_chromatogram_selection) > 0: 
+        spectra_chromatogram_selection = plotly_events(spectra_chromatogram, select_event = True)
+
+        if spectra_chromatogram_selection is not None and len(spectra_chromatogram_selection) > 0:
             #get min and max rt
             min_rt_select = min([rt["x"] for rt in spectra_chromatogram_selection])
             max_rt_select = max([rt["x"] for rt in spectra_chromatogram_selection])
             #get min and max mz
             min_mz_select = min([mz["y"] for mz in spectra_chromatogram_selection])
             max_mz_select = max([mz["y"] for mz in spectra_chromatogram_selection])
-            
+
             #change value in the corresponding number_input fields
             st.session_state["min_rt_filter"] = min_rt_select
             st.session_state["max_rt_filter"] = max_rt_select
             st.session_state["min_mz_filter"] = min_mz_select
             st.session_state["max_mz_filter"] = max_mz_select
-            
-            
-            
-            
-        
+
         spec_sel_col1, spec_sel_col2 = st.columns(2)
-        
+
         with spec_sel_col1:
             first_scan = st.selectbox("Select the first scan number to analyse:",
                                       st.session_state["spectra"]["spectra"].keys(),
@@ -73,7 +65,7 @@ def main(argv = None) -> None:
                                      max_value = 10000.0,
                                      value = 0.0,
                                      step = 0.01,
-                                     help = "The minimum m/z.", 
+                                     help = "The minimum m/z.",
                                      key="min_mz_filter")
 
             min_rt = st.number_input("Select the minimum retention time for a spectrum:",
@@ -145,19 +137,12 @@ def main(argv = None) -> None:
         else:
             st.info("No identifications file was provided! Filtering based on proteins/peptides not available unless a identifications file is uploaded in the \"Annotation\" tab!")
 
-    
-
-    
     ############################################################################
         filter_spectra_header = st.subheader("Filter Spectra", divider = DIV_COLOR)
 
-        l1, l2, center_button, r1, r2 = st.columns(5)
+        filter_spectra_col1, filter_spectra_col2 = st.columns(2)
 
-        with center_button:
-            run_filter = st.button("Filter spectra and create consensus spectrum", use_container_width = True)
-            
-
-        with r1:
+        with filter_spectra_col1:
             fg_mzd = st.number_input("Select mzd for combining spectra:",
                                      min_value = 0.0,
                                      max_value = 1.0,
@@ -166,7 +151,7 @@ def main(argv = None) -> None:
                                      format = "%0.3f",
                                      help = "mzd.")
 
-        with r2:
+        with filter_spectra_col2:
             fg_cov = st.number_input("Select coverage for peak filtering:",
                                      min_value = 0.0,
                                      max_value = 1.0,
@@ -174,6 +159,11 @@ def main(argv = None) -> None:
                                      step = 0.001,
                                      format = "%0.3f",
                                      help = "cov.")
+
+        l1, l2, center_button, r1, r2 = st.columns(5)
+
+        with center_button:
+            run_filter = st.button("Filter spectra and create consensus spectrum", use_container_width = True)
 
         if run_filter:
             if st.session_state.spectrum_file is not None:
@@ -206,15 +196,13 @@ def main(argv = None) -> None:
                         st.session_state["filtered_spectra"] = filter_spectra(st.session_state.spectrum_file,
                                                                               filter_params,
                                                                               st.session_state.spectrum_file.name)
-                        
 
                     filter_status.update(label = "Successfully finished filtering spectra.", state = "complete")
-                    
             else:
                 st.error("Error reading spectra file! Please re-upload your file in the \"Annotation\" tab!", icon = "🚨")
 
             # build consensus spectrum
-            if "filtered_spectra" in st.session_state:         
+            if "filtered_spectra" in st.session_state:
                 with st.status("Combining spectra to consensus spectrum...") as consensus_status:
                     with st_stdout("info"):
                         # merge spectra into a single consensus spectrum
@@ -230,17 +218,17 @@ def main(argv = None) -> None:
                     consensus_status.update(label = f"Successfully created consensus spectrum from " +
                                                     f"filtered spectra from file {st.session_state['filtered_spectra']['name']}!",
                                             state = "complete")
-                                    
+
 
     else:
         st.error("No spectra file uploaded! Please upload a file in the \"Annotation\" tab!", icon = "🚨")
-        
-        
-    ############################################################################
-    
-    spectrum_viewer_header = st.subheader("Spectrum Viewer", divider = DIV_COLOR)
 
     if "filtered_spectra" in st.session_state:
+
+    ############################################################################
+        spectrum_viewer_header = st.subheader("Spectrum Viewer", divider = DIV_COLOR)
+        spectrum_viewer_desc = st.markdown("desc text")
+
         spectrum_plot = plot_consensus_spectrum(st.session_state["consensus_spectrum"]["its_mean"],
                                         st.session_state["consensus_spectrum"]["mz_mean"],
                                         st.session_state["consensus_spectrum"]["cov_spectra"]
@@ -248,124 +236,11 @@ def main(argv = None) -> None:
         st_spectrum_plot = st.plotly_chart(spectrum_plot, use_container_width = True)
         st_spectrum_plot_caption = st.markdown(f"**Figure 1:** Displaying consensus spetrum.")
 
-
-    ############################################################################
-    # if "filtered_spectra" in st.session_state:
-    #     download_header = st.subheader("Download Filtered Spectra", divider = DIV_COLOR)
-
-    #     filter_dl_desc_text1 = st.markdown("**Filtered spectra based on following criteria:**")
-    #     filter_dl_desc_text1 = st.markdown("**Input Filename:**")
-    #     filter_dl_desc_text1 = st.text(f"{st.session_state['filtered_spectra']['name']}")
-
-    #     scans_from_protein_str = ""
-    #     if st.session_state["filtered_spectra"]["filter_params"]["selected_protein"] is None:
-    #         scans_from_protein_str = None
-    #     else:
-    #         if len(st.session_state["filtered_spectra"]["filter_params"]["scans_from_protein"]) > 10:
-    #             scans_from_protein_str = "\"omitted due to size (>10)\""
-    #         else:
-    #             scans_from_protein_str = "[" + ", ".join([str(x) for x in st.session_state["filtered_spectra"]["filter_params"]["scans_from_protein"]]) + "]"
-
-    #     scans_from_peptide_str = ""
-    #     if st.session_state["filtered_spectra"]["filter_params"]["selected_peptide"] is None:
-    #         scans_from_peptide_str = None
-    #     else:
-    #         if len(st.session_state["filtered_spectra"]["filter_params"]["scans_from_peptide"]) > 10:
-    #             scans_from_peptide_str = "\"omitted due to size (>10)\""
-    #         else:
-    #             scans_from_peptide_str = "[" + ", ".join([str(x) for x in st.session_state["filtered_spectra"]["filter_params"]["scans_from_peptide"]]) + "]"
-
-    #     params_str = "\t{\"source_filename\": " + f"{st.session_state['filtered_spectra']['name']}\n" + \
-    #                  "\t \"filter_params\": \n\t\t{\"first_scan\": " + f"{st.session_state['filtered_spectra']['filter_params']['first_scan']}\n" + \
-    #                  "\t\t \"last_scan\": " + f"{st.session_state['filtered_spectra']['filter_params']['last_scan']}\n" + \
-    #                  "\t\t \"min_mz\": " + f"{st.session_state['filtered_spectra']['filter_params']['min_mz']}\n" + \
-    #                  "\t\t \"max_mz\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_mz']}\n" + \
-    #                  "\t\t \"min_rt\": " + f"{st.session_state['filtered_spectra']['filter_params']['min_rt']}\n" + \
-    #                  "\t\t \"max_rt\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_rt']}\n" + \
-    #                  "\t\t \"max_charge\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_charge']}\n" + \
-    #                  "\t\t \"max_isotope\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_isotope']}\n" + \
-    #                  "\t\t \"selected_protein\": " + f"{st.session_state['filtered_spectra']['filter_params']['selected_protein']}\n" + \
-    #                  "\t\t \"scans_from_protein\": " + f"{scans_from_protein_str}\n" + \
-    #                  "\t\t \"selected_peptide\": " + f"{st.session_state['filtered_spectra']['filter_params']['selected_peptide']}\n" + \
-    #                  "\t\t \"scans_from_peptide\": " + f"{scans_from_peptide_str}\n" + \
-    #                  "\t\t}\n\t}"
-
-    #     filter_dl_desc_text1 = st.markdown("**Filter Parameters:**")
-    #     filter_dl_desc_text1 = st.text(params_str)
-
-    #     dl_l1, dl_r1 = st.columns(2)
-
-    #     with dl_l1:
-    #         mgf_spectra = st.download_button(label = "Download spectra in .mgf format!",
-    #                                          data = spectra_to_mgf_stream(st.session_state["filtered_spectra"]),
-    #                                          file_name = "filtered_spectra.mgf.txt",
-    #                                          mime = "text/plain",
-    #                                          help = "Download the filtered spectra in .mgf file format.",
-    #                                          type = "primary",
-    #                                          use_container_width = True)
-
-    #     with dl_r1:
-    #         json_meta = st.download_button(label = "Download meta-data in .json format!",
-    #                                        data = json.dumps({"source_filename": st.session_state["filtered_spectra"]["name"],
-    #                                                           "filter_params": st.session_state["filtered_spectra"]["filter_params"]}),
-    #                                        file_name = "filtered_spectra_meta.json",
-    #                                        mime = "text/json",
-    #                                        help = "Download meta-data of the filtered spectra in .json file format.",
-    #                                        type = "primary",
-    #                                        use_container_width = True)
-            
-            
-            
-        ############################################################################
-        
-    # if "filtered_spectra" in st.session_state:
-    #     st.success(f"Filtered spectra from file \"{st.session_state['filtered_spectra']['name']}\" were successfully loaded!")
-    #     with st.expander("Display filtering parameters:"):
-    #         scans_from_protein_str = ""
-    #         if st.session_state["filtered_spectra"]["filter_params"]["selected_protein"] is None:
-    #             scans_from_protein_str = None
-    #         else:
-    #             if len(st.session_state["filtered_spectra"]["filter_params"]["scans_from_protein"]) > 10:
-    #                 scans_from_protein_str = "\"omitted due to size (>10)\""
-    #             else:
-    #                 scans_from_protein_str = "[" + ", ".join([str(x) for x in st.session_state["filtered_spectra"]["filter_params"]["scans_from_protein"]]) + "]"
-
-    #         scans_from_peptide_str = ""
-    #         if st.session_state["filtered_spectra"]["filter_params"]["selected_peptide"] is None:
-    #             scans_from_peptide_str = None
-    #         else:
-    #             if len(st.session_state["filtered_spectra"]["filter_params"]["scans_from_peptide"]) > 10:
-    #                 scans_from_peptide_str = "\"omitted due to size (>10)\""
-    #             else:
-    #                 scans_from_peptide_str = "[" + ", ".join([str(x) for x in st.session_state["filtered_spectra"]["filter_params"]["scans_from_peptide"]]) + "]"
-
-    #         params_str = "\t{\"source_filename\": " + f"{st.session_state['filtered_spectra']['name']}\n" + \
-    #                      "\t \"filter_params\": \n\t\t{\"first_scan\": " + f"{st.session_state['filtered_spectra']['filter_params']['first_scan']}\n" + \
-    #                      "\t\t \"last_scan\": " + f"{st.session_state['filtered_spectra']['filter_params']['last_scan']}\n" + \
-    #                      "\t\t \"min_mz\": " + f"{st.session_state['filtered_spectra']['filter_params']['min_mz']}\n" + \
-    #                      "\t\t \"max_mz\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_mz']}\n" + \
-    #                      "\t\t \"min_rt\": " + f"{st.session_state['filtered_spectra']['filter_params']['min_rt']}\n" + \
-    #                      "\t\t \"max_rt\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_rt']}\n" + \
-    #                      "\t\t \"max_charge\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_charge']}\n" + \
-    #                      "\t\t \"max_isotope\": " + f"{st.session_state['filtered_spectra']['filter_params']['max_isotope']}\n" + \
-    #                      "\t\t \"selected_protein\": " + f"{st.session_state['filtered_spectra']['filter_params']['selected_protein']}\n" + \
-    #                      "\t\t \"scans_from_protein\": " + f"{scans_from_protein_str}\n" + \
-    #                      "\t\t \"selected_peptide\": " + f"{st.session_state['filtered_spectra']['filter_params']['selected_peptide']}\n" + \
-    #                      "\t\t \"scans_from_peptide\": " + f"{scans_from_peptide_str}\n" + \
-    #                      "\t\t}\n\t}"
-
-    #         filter_dl_desc_text1t4 = st.markdown("**Filter Parameters:**")
-    #         filter_dl_desc_text1t4 = st.text(params_str)
-
-    ############################################################################
-    
     if "consensus_spectrum" in st.session_state:
-        
-        
+
+    ############################################################################
         fraggraph_params_header = st.subheader("Fraggraph Parameters", divider = DIV_COLOR)
-
-        fraggraph_params_text = st.markdown("Please specify the parameters used for running Fraggraph.")
-
+        fraggraph_params_desc = st.markdown("Please specify the parameters used for running Fraggraph.")
 
         fg_peptidoform1 = st.text_input("Specify a peptidoform to consider:",
                                         value = "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE",
@@ -379,7 +254,6 @@ def main(argv = None) -> None:
                                                "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE.",
                                         placeholder = "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE")
 
-        
         fg_run_l, fg_run_center, fg_run_r = st.columns(3)
 
         with fg_run_center:
@@ -390,55 +264,6 @@ def main(argv = None) -> None:
                             "cov": fg_cov,
                             "pep1": fg_peptidoform1,
                             "pep2": fg_peptidoform2})
-        
+
     else:
         st.error("No consensus spectrum available. Please check spectra selection and create a consensus spectrum first", icon = "🚨")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-cmt = \
-"""
-    if "dataframes" in st.session_state:
-        if st.session_state["dataframes"] is not None:
-
-            st.write("Files are available.")
-            result_copy = st.session_state["dataframes"][0]
-            result_copy["id_extracted"] = [int(item.split("=")[-1]) for item in result_copy["spectrum_id"]] # put in parser??
-
-            unique_ids = list(set(result_copy["id_extracted"]))
-
-            selected_spectrum = st.slider("Select a spectrum", min_value=min(unique_ids), max_value=max(unique_ids))
-
-            ints = result_copy[result_copy['id_extracted'] == selected_spectrum]["frag_intensity"]
-            mzs = result_copy[result_copy['id_extracted'] == selected_spectrum]["frag_mz"]
-            # Choose from list of avalible spectra indices?
-            spectrum_plot = plot_spectrum(ints, mzs) # input selected_spectrum
-            st.plotly_chart(spectrum_plot)
-
-
-    else:
-        st.write("File is not available. Upload your files in the annotation tab.")
-"""
