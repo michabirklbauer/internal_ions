@@ -94,8 +94,8 @@ def main(argv = None) -> None:
                        page_icon = ":test_tube:",
                        layout = "wide",
                        initial_sidebar_state = "expanded",
-                       menu_items = {"Get Help": "https://github.com/michabirklbauer/internal-ions/discussions",
-                                     "Report a bug": "https://github.com/michabirklbauer/internal-ions/issues",
+                       menu_items = {"Get Help": "https://github.com/michabirklbauer/internal_ions/discussions",
+                                     "Report a bug": "https://github.com/michabirklbauer/internal_ions/issues",
                                      "About": about_str}
                        )
 
@@ -114,9 +114,9 @@ def main(argv = None) -> None:
         # tolerance
         ttolerance_desc = st.markdown("**Tolerance**")
         ttolerance = st.number_input("Tolerance in Da:",
-                                 key = "tolerance",
-                                 value = 0.02,
-                                 help = "Fragment ion mass tolerance in Dalton.")
+                                     key = "tolerance",
+                                     value = 0.02,
+                                     help = "Fragment ion mass tolerance in Dalton.")
 
         # ions
         fions_selectbox_desc = st.markdown("**Ions**")
@@ -143,26 +143,44 @@ def main(argv = None) -> None:
                                                       "Ions": ["b, y", "c, z"]}),
                                         hide_index = True,
                                         use_container_width = True)
-        
-        # Non deconvoluted spectra 
-        st.markdown("---")
+
+        # Non deconvoluted spectra
+        st.markdown("----")
         fions_selectbox_desc = st.markdown("**Annotation of non-deconvoluted spectra**")
-           
-        deconvoluted_spectra = st.checkbox("Deconvoluted spectra", value=False, key="deconvoluted_spectra")
-        
+
+        deconvoluted_spectra = st.checkbox("Deconvoluted spectra",
+                                           key = "deconvoluted_spectra",
+                                           value = False)
+
         if not deconvoluted_spectra:
             # Add additional parameters here
-            
             monoisotopic = False
-            max_charge_auto = st.checkbox("Max Charge Auto", value=False, key="max_charge_auto", help="Automatically determine the maximum charge state of the precursor to consider.")
-            if not max_charge_auto:        
-                max_charge = st.number_input("Max Charge:", key = "max_charge", value = 3, format="%d", help="Maximum charge state of the precursor to consider.")
-                
-            max_isotope_auto = st.checkbox("Max Isotope Auto", value=False, key="max_isotope_auto", help="Automatically determine the maximum isotope to consider.")
+            max_charge_auto = st.checkbox("Max Charge Auto",
+                                          key = "max_charge_auto",
+                                          value = False,
+                                          help = "Automatically determine the maximum charge state of the precursor to consider.")
+            if not max_charge_auto:
+                max_charge = st.number_input("Max Charge:",
+                                             key = "max_charge",
+                                             value = 3,
+                                             format = "%d",
+                                             help = "Maximum charge state of the precursor to consider.")
+
+            max_isotope_auto = st.checkbox("Max Isotope Auto",
+                                           key = "max_isotope_auto",
+                                           value = False,
+                                           help = "Automatically determine the maximum isotope to consider.")
             if not max_isotope_auto:
-                max_isotope = st.number_input("Max Isotope:", key = "max_isotope", value = 5, format="%d", help="Maximum isotope to consider.")
-            
-            charge_reduction = st.checkbox("Charge Reduction", value=False, key="charge_reduction", help="Charge reduction implies that a charge is lost upon fragmentation event. This is typically the case for electron-based fragmentation (e.g. ETD ECD).")
+                max_isotope = st.number_input("Max Isotope:",
+                                              key = "max_isotope",
+                                              value = 5,
+                                              format = "%d",
+                                              help = "Maximum isotope to consider.")
+
+            charge_reduction = st.checkbox("Charge Reduction",
+                                           key = "charge_reduction",
+                                           value = False,
+                                           help = "Charge reduction implies that a charge is lost upon fragmentation event. This is typically the case for electron-based fragmentation (e.g. ETD ECD).")
         else:
             # Set default parameters here
             max_charge = 1
@@ -171,8 +189,6 @@ def main(argv = None) -> None:
             max_isotope = 5
             charge_reduction = False
 
-        
-        
     ############################################################################
         contact_header = st.subheader("About the Project", divider = DIV_COLOR)
 
@@ -186,7 +202,7 @@ def main(argv = None) -> None:
         license_str = "**License:** [???]()"
         license = st.markdown(license_str)
 
-        project_str = "**Project Page:** [GitHub](https://github.com/michabirklbauer/internal-ions/)"
+        project_str = "**Project Page:** [GitHub](https://github.com/michabirklbauer/internal_ions/)"
         project = st.markdown(project_str)
 
     main_page()
