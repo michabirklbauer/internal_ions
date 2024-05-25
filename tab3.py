@@ -13,7 +13,7 @@ from util.streamlit_utils import spectra_to_mgf_stream
 from util.tab3.plots import plot_spectrum
 from util.tab3.plots import plot_consensus_spectrum
 from util.tab3.plots import plot_spectra_chromatogram
-from util.tab4.fraggraph import main as fraggraph_main
+from util.tab3.fraggraph import main as fraggraph_main
 
 from util.constants import DIV_COLOR
 
