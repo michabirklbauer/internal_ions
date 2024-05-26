@@ -15,9 +15,9 @@ import streamlit as st
 from tab1 import main as tab1_main
 from tab2 import main as tab2_main
 from tab3 import main as tab3_main
-from tab4 import main as tab4_main
 
 # import constants
+from util.constants import REPO_NAME
 from util.constants import DIV_COLOR
 
 # main page content
@@ -82,8 +82,8 @@ def main(argv = None) -> None:
                        page_icon = ":test_tube:",
                        layout = "wide",
                        initial_sidebar_state = "expanded",
-                       menu_items = {"Get Help": "https://github.com/michabirklbauer/internal_ions/discussions",
-                                     "Report a bug": "https://github.com/michabirklbauer/internal_ions/issues",
+                       menu_items = {"Get Help": f"https://github.com/michabirklbauer/{REPO_NAME}/discussions",
+                                     "Report a bug": f"https://github.com/michabirklbauer/{REPO_NAME}/issues",
                                      "About": about_str}
                        )
 
@@ -190,7 +190,7 @@ def main(argv = None) -> None:
         license_str = "**License:** [???]()"
         license = st.markdown(license_str)
 
-        project_str = "**Project Page:** [GitHub](https://github.com/michabirklbauer/internal_ions/)"
+        project_str = f"**Project Page:** [GitHub](https://github.com/michabirklbauer/{REPO_NAME}/)"
         project = st.markdown(project_str)
 
     main_page()
