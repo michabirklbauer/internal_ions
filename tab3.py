@@ -33,6 +33,8 @@ def main(argv = None) -> None:
         spectrum_selection_header = st.subheader("Spectrum Selector", divider = DIV_COLOR)
         spectrum_selection_text = st.markdown("Using the following fields you can filter your spectra for further analyis.")
 
+        # this can definitely be implemented with vanilla streamlit
+        # see here https://docs.streamlit.io/develop/api-reference/charts/st.plotly_chart
         # Plot chromatogram
         spectra_chromatogram = plot_spectra_chromatogram(st.session_state["spectra"]["spectra"])
         spectra_chromatogram_selection = plotly_events(spectra_chromatogram, select_event = True)
@@ -160,10 +162,12 @@ def main(argv = None) -> None:
                                      format = "%0.3f",
                                      help = "cov.")
 
-        l1, l2, center_button, r1, r2 = st.columns(5)
+        l1, center_button, r1 = st.columns(3)
 
         with center_button:
-            run_filter = st.button("Filter spectra and create consensus spectrum", use_container_width = True)
+            run_filter = st.button("Filter spectra and create consensus spectrum",
+                                   type = "primary",
+                                   use_container_width = True)
 
         if run_filter:
             if st.session_state.spectrum_file is not None:

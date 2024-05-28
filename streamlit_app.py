@@ -138,12 +138,13 @@ def main(argv = None) -> None:
 
         deconvoluted_spectra = st.checkbox("Deconvoluted spectra",
                                            key = "deconvoluted_spectra",
-                                           value = False)
+                                           value = False,
+                                           help = "If spectra are already deconvoluted.")
 
         if not deconvoluted_spectra:
             # Add additional parameters here
             monoisotopic = False
-            max_charge_auto = st.checkbox("Max Charge Auto",
+            max_charge_auto = st.checkbox("Auto-select Max Charge",
                                           key = "max_charge_auto",
                                           value = False,
                                           help = "Automatically determine the maximum charge state of the precursor to consider.")
@@ -154,7 +155,7 @@ def main(argv = None) -> None:
                                              format = "%d",
                                              help = "Maximum charge state of the precursor to consider.")
 
-            max_isotope_auto = st.checkbox("Max Isotope Auto",
+            max_isotope_auto = st.checkbox("Auto-select Max Isotope",
                                            key = "max_isotope_auto",
                                            value = False,
                                            help = "Automatically determine the maximum isotope to consider.")
