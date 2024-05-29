@@ -20,15 +20,15 @@ def common_type_gen(fragments_dataframe: pd.DataFrame) -> pd.Series:
 def common_type_hist(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     common_type = common_type_gen(fragments_dataframe)
-    
+
     fig = go.Figure([go.Histogram(x = common_type)])
-    fig.update_layout(xaxis=dict(gridcolor='transparent'),
+    fig.update_layout(
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         )
     )
     return fig
@@ -37,15 +37,15 @@ def common_type_pie(fragments_dataframe: pd.DataFrame) -> go.Figure:
 
     common_type = common_type_gen(fragments_dataframe)
     counts = common_type.value_counts()
-    
+
     pie_fig = go.Figure([go.Pie(labels=counts.keys(), values=counts)])
     pie_fig.update_layout(
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         )
     )
 
@@ -63,13 +63,13 @@ def log_ion_intens_dist(fragments_dataframe: pd.DataFrame) -> go.Figure:
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
                       xaxis_title = "Log2(Intensity)",
-                      yaxis_title = "Probability", 
+                      yaxis_title = "Probability",
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         ))
 
     return fig
@@ -86,13 +86,13 @@ def rel_ion_intens_perc(fragments_dataframe: pd.DataFrame) -> go.Figure:
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
                       xaxis_title = "Intensity",
-                      yaxis_title = "Probability", 
+                      yaxis_title = "Probability",
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         ))
 
     return fig
@@ -111,11 +111,11 @@ def rel_ion_intens_prop(fragments_dataframe: pd.DataFrame) -> go.Figure:
                       xaxis_title = "Percentage per base peak",
                       yaxis_title = "Probability",
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         ))
 
     return fig
@@ -132,13 +132,13 @@ def mz_dist_ion_type(fragments_dataframe: pd.DataFrame) -> go.Figure:
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
                       xaxis_title = "m/z",
-                      yaxis_title = "Probability", 
+                      yaxis_title = "Probability",
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         ))
 
     return fig
@@ -155,13 +155,13 @@ def per_spec_ion_type(spectra_dataframe: pd.DataFrame) -> go.Figure:
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
                       xaxis_title = "Percentage",
-                      yaxis_title = "Probability", 
+                      yaxis_title = "Probability",
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         ))
 
     return fig
@@ -178,13 +178,13 @@ def per_spec_ion_intens(spectra_dataframe: pd.DataFrame) -> go.Figure:
     fig = go.Figure(histograms)
     fig.update_layout(barmode = "group",
                       xaxis_title = "Percentage",
-                      yaxis_title = "Probability", 
+                      yaxis_title = "Probability",
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         ))
 
     return fig
@@ -200,13 +200,13 @@ def log_ion_intens_ridge(fragments_dataframe: pd.DataFrame) -> go.Figure:
     fig.update_traces(orientation = "h", side = "positive", width = 3, points = False)
     fig.update_layout(barmode = "group",
                       xaxis_title = "Log2(Intensity)",
-                      yaxis_title = "Probability", 
+                      yaxis_title = "Probability",
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         ))
 
     return fig
@@ -222,13 +222,13 @@ def rel_ion_intens_ridge(fragments_dataframe: pd.DataFrame) -> go.Figure:
     fig.update_traces(orientation = "h", side = "positive", width = 3, points = False)
     fig.update_layout(barmode = "group",
                       xaxis_title = "Intensity",
-                      yaxis_title = "Probability", 
+                      yaxis_title = "Probability",
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         ))
 
     return fig
@@ -244,13 +244,13 @@ def rel_ion_intens_prop_ridge(fragments_dataframe: pd.DataFrame) -> go.Figure:
     fig.update_traces(orientation = "h", side = "positive", width = 3, points = False)
     fig.update_layout(barmode = "group",
                       xaxis_title = "Intensity",
-                      yaxis_title = "Probability", 
+                      yaxis_title = "Probability",
         margin=dict(
-            t=0,  
-            b=0, 
-            l=0,  
-            r=0,  
-            pad=0  
+            t=0,
+            b=0,
+            l=0,
+            r=0,
+            pad=0
         ))
 
     return fig
@@ -296,8 +296,8 @@ def logo_of_fraction(spectra_dataframe: pd.DataFrame,
                    ax = ax1,
                    color_scheme = "NajafabadiEtAl2017",
                    vpad = 0.1,
-                   width = 0.8, 
-                   show_spines=False 
+                   width = 0.8,
+                   show_spines=False
                   )
     ax1.set_xlabel("Position in subset")
     ax1.set_ylabel("Amino acid frequency")
