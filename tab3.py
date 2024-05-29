@@ -4,7 +4,6 @@ import json
 
 import streamlit as st
 
-from streamlit_plotly_events import plotly_events
 from fraggraph.combine_spectra import combine_spectra
 
 from util.redirect import st_stdout
@@ -16,6 +15,37 @@ from util.tab3.plots import plot_spectra_chromatogram
 from util.tab3.fraggraph import main as fraggraph_main
 
 from util.constants import DIV_COLOR
+
+from typing import Dict
+from typing import Any
+
+def get_minmz(selection: Dict[str, Any]) -> float:
+    if len(selection["selection"]["box"]) == 0:
+        return 0.0
+
+    box = selection["selection"]["box"][-1]
+    return min(box["y"])
+
+def get_maxmz(selection: Dict[str, Any]) -> float:
+    if len(selection["selection"]["box"]) == 0:
+        return 10000.0
+
+    box = selection["selection"]["box"][-1]
+    return max(box["y"])
+
+def get_minrt(selection: Dict[str, Any]) -> float:
+    if len(selection["selection"]["box"]) == 0:
+        return min([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()])
+
+    box = selection["selection"]["box"][-1]
+    return min(box["x"])
+
+def get_maxrt(selection: Dict[str, Any]) -> float:
+    if len(selection["selection"]["box"]) == 0:
+        return max([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()])
+
+    box = selection["selection"]["box"][-1]
+    return max(box["x"])
 
 def main(argv = None) -> None:
 
@@ -33,25 +63,13 @@ def main(argv = None) -> None:
         spectrum_selection_header = st.subheader("Spectrum Selector", divider = DIV_COLOR)
         spectrum_selection_text = st.markdown("Using the following fields you can filter your spectra for further analyis.")
 
-        # this can definitely be implemented with vanilla streamlit
-        # see here https://docs.streamlit.io/develop/api-reference/charts/st.plotly_chart
-        # Plot chromatogram
-        spectra_chromatogram = plot_spectra_chromatogram(st.session_state["spectra"]["spectra"])
-        spectra_chromatogram_selection = plotly_events(spectra_chromatogram, select_event = True)
-
-        if spectra_chromatogram_selection is not None and len(spectra_chromatogram_selection) > 0:
-            #get min and max rt
-            min_rt_select = min([rt["x"] for rt in spectra_chromatogram_selection])
-            max_rt_select = max([rt["x"] for rt in spectra_chromatogram_selection])
-            #get min and max mz
-            min_mz_select = min([mz["y"] for mz in spectra_chromatogram_selection])
-            max_mz_select = max([mz["y"] for mz in spectra_chromatogram_selection])
-
-            #change value in the corresponding number_input fields
-            st.session_state["min_rt_filter"] = min_rt_select
-            st.session_state["max_rt_filter"] = max_rt_select
-            st.session_state["min_mz_filter"] = min_mz_select
-            st.session_state["max_mz_filter"] = max_mz_select
+        # plot chromatogram
+        spectra_chromatogram = st.plotly_chart(plot_spectra_chromatogram(st.session_state["spectra"]["spectra"]),
+                                               use_container_width = True,
+                                               theme = "streamlit",
+                                               key = "chromatogram",
+                                               on_select = "rerun",
+                                               selection_mode = "box")
 
         spec_sel_col1, spec_sel_col2 = st.columns(2)
 
@@ -65,7 +83,7 @@ def main(argv = None) -> None:
             min_mz = st.number_input("Select the minimum m/z for a spectrum:",
                                      min_value = 0.0,
                                      max_value = 10000.0,
-                                     value = 0.0,
+                                     value = get_minmz(spectra_chromatogram),
                                      step = 0.01,
                                      help = "The minimum m/z.",
                                      key="min_mz_filter")
@@ -73,7 +91,7 @@ def main(argv = None) -> None:
             min_rt = st.number_input("Select the minimum retention time for a spectrum:",
                                      min_value = min([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()]),
                                      max_value = max([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()]),
-                                     value = min([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()]),
+                                     value = get_minrt(spectra_chromatogram),
                                      step = 0.01,
                                      help = "The minimum rt.",
                                      key="min_rt_filter")
@@ -96,7 +114,7 @@ def main(argv = None) -> None:
             max_mz = st.number_input("Select the maximum m/z for a spectrum:",
                                      min_value = 0.0,
                                      max_value = 10000.0,
-                                     value = 10000.0,
+                                     value = get_maxmz(spectra_chromatogram),
                                      step = 0.01,
                                      help = "The maximum m/z.",
                                      key="max_mz_filter")
@@ -104,7 +122,7 @@ def main(argv = None) -> None:
             max_rt = st.number_input("Select the maximum retention time for a spectrum:",
                                      min_value = min([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()]),
                                      max_value = max([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()]),
-                                     value = max([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()]),
+                                     value = get_maxrt(spectra_chromatogram),
                                      step = 0.01,
                                      help = "The maximum rt.",
                                      key="max_rt_filter")
@@ -261,7 +279,9 @@ def main(argv = None) -> None:
         fg_run_l, fg_run_center, fg_run_r = st.columns(3)
 
         with fg_run_center:
-            run_fraggraph = st.button("Run Fraggraph!", use_container_width = True)
+            run_fraggraph = st.button("Run Fraggraph!",
+                                      type = "primary",
+                                      use_container_width = True)
 
         if run_fraggraph:
             fraggraph_main({"mzd": fg_mzd,
