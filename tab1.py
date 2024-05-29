@@ -92,10 +92,12 @@ def main(argv = None) -> None:
     ############################################################################
     st.subheader("Annotation", divider = DIV_COLOR)
 
-    l1, l2, center_button, r1, r2 = st.columns(5)
+    l1, center_button, r1 = st.columns(3)
 
     with center_button:
-        run_analysis = st.button("Load files and run Fragannot!", use_container_width = True)
+        run_analysis = st.button("Load files and run Fragannot!",
+                                 type = "primary",
+                                 use_container_width = True)
 
     if run_analysis:
         if st.session_state.spectrum_file is not None and st.session_state.identifications_file is not None:
