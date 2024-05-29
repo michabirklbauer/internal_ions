@@ -26,7 +26,6 @@ from time import sleep
 from tqdm import tqdm
 import plotly.express as px
 
-
 class FragGraph(nx.DiGraph):
     default_node_attributes = {
         # fragment attributes
@@ -77,7 +76,6 @@ class FragGraph(nx.DiGraph):
         #     )
 
         # parameters
-        
         self.terminals_only = False
         self.min_weight_threshold = 0.01
         self.min_intermediate_2_evidence = 1
@@ -238,7 +236,7 @@ class FragGraph(nx.DiGraph):
         self.remove_non_leaf_branches()
         self.set_node_title_as_attributes()
         self.set_position_nodes()
-        
+
         print("Graph generated")
 
     def add_node(self, node_id, parent=None, **kwargs):
@@ -958,7 +956,7 @@ class FragGraph(nx.DiGraph):
             return (intensity / upper_limit) * self.peak_scaling_factor + 10
 
     def set_position_nodes(self):
-        
+
         with tqdm(total=len(list(self.nodes.keys())), desc="Setting node positions (Vis)") as pbar:
             for node in self.nodes:
                 if self.nodes[node]["node_type"] == "leaf":
@@ -986,7 +984,7 @@ class FragGraph(nx.DiGraph):
                         )
 
                     self.set_node_attributes(node, x=x, y=y, physics=False)
-                    
+
                 pbar.update(1)
 
     def add_spectrum_peaks_to_graph(self, radius):
@@ -1133,8 +1131,8 @@ class FragGraph(nx.DiGraph):
                         for leaf_node, weight in zip(parents, I2_weights):
                             self.set_node_attributes(leaf_node, weight=weight)
                 pbar.update(1)
-           
-        # set the intensity size of the leaf nodes                    
+
+        # set the intensity size of the leaf nodes
         with tqdm(total=len(self.nodes), desc="Propagating Intensity (leaf nodes)") as pbar:
             for node in self.nodes:
                 if self.nodes[node]["node_type"] == "leaf":
@@ -1154,8 +1152,8 @@ class FragGraph(nx.DiGraph):
                             node, size=self.node_size_from_intensity(0), intensity=0
                         )
                 pbar.update(1)
-                
-        # propagate the intensity from leaf nodes to intermediate_2 nodes                
+
+        # propagate the intensity from leaf nodes to intermediate_2 nodes
         with tqdm(total=len(self.nodes), desc="Propagating Intensity (I2 nodes)") as pbar:
             for node in self.nodes:
                 if self.nodes[node]["node_type"] == "leaf":
@@ -1169,8 +1167,8 @@ class FragGraph(nx.DiGraph):
                             size=self.node_size_from_intensity(intensity),
                             intensity=intensity,
                         )
-                pbar.update(1)        
-                        
+                pbar.update(1)
+
         # propagate the intensity from intermediate_2 nodes to intermediate_1 nodes
         with tqdm(total=len(self.nodes), desc="Propagating Intensity (I1 nodes)") as pbar:
             for node in self.nodes:
@@ -1186,8 +1184,8 @@ class FragGraph(nx.DiGraph):
                             intensity=intensity,
                         )
                 pbar.update(1)
-        
-        # propagate the intensity from intermediate_1 nodes to intermediate_0 nodes           
+
+        # propagate the intensity from intermediate_1 nodes to intermediate_0 nodes
         with tqdm(total=len(self.nodes), desc="Propagating Intensity (I0 nodes)") as pbar:
             for node in self.nodes:
                 if self.nodes[node]["node_type"] == "intermediate_1":
@@ -1209,8 +1207,8 @@ class FragGraph(nx.DiGraph):
                                 intensity=intensity,
                             )
                 pbar.update(1)
-        
-                
+
+
 
     def compute_cosine_similarity(self):
         for node in self.nodes:
@@ -2298,7 +2296,7 @@ class FragGraph(nx.DiGraph):
         summed_its = np.sum(self.its)
 
         return summed_its
-    
+
     def get_peptidoform_indexes(self):
         indexes = []
         for node in self.nodes:
@@ -2379,9 +2377,9 @@ class FragGraph(nx.DiGraph):
         # print(df)
         # how many row below self.min_intermediate_2
         # print("number of rows below min_intermediate_2:", len(df[df["n_child_I2"] < self.min_intermediate_2_evidence]))
-        
+
         #print head of the dataframe
-        
+
         print(df.head(10))
 
         # filter n_child_I2
@@ -2395,38 +2393,38 @@ class FragGraph(nx.DiGraph):
         df["end_pos"] = df["end_pos"].astype(int)
 
         return df
-    
+
     def get_all_fragment_table_I0(self):
         """
         This function returns a table with fragment information at the intermediate_0 nodes level for each peptidoforms
         intensity and mz column for each peptidoform
         (add a suffix to the column name to indicate the peptidoform index)
         """
-            
+
         # get all peptidoform indexes
         indexes = self.get_peptidoform_indexes()
-        
+
         print("peptidoform indexes:", indexes)
-        
+
         list_df = []
-        
+
         for index in indexes:
             df = self.get_fragment_table_I0(index)
-        
+
             df["peptidoform_index"] = index
-            
+
             list_df.append(df)
-            
+
         #concatenate rows
-        
+
         df = pd.concat(list_df)
 
-        
-        
-        
+
+
+
         return df
-        
-        
+
+
 
     def get_leaf_nodes_linked_to_peak(self, peak_node_code):
         """

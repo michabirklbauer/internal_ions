@@ -17,13 +17,10 @@ matplotlib
 plotly
 logomaker
 networkx
-plotnine
 pyvis
 Requests
-rpy2
 scikit_learn
 scipy
 statsmodels
 tqdm
 brain_isotopic_distribution
-streamlit_plotly_events

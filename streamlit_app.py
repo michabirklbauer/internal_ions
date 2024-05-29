@@ -15,9 +15,9 @@ import streamlit as st
 from tab1 import main as tab1_main
 from tab2 import main as tab2_main
 from tab3 import main as tab3_main
-from tab4 import main as tab4_main
 
 # import constants
+from util.constants import REPO_NAME
 from util.constants import DIV_COLOR
 
 # main page content
@@ -32,7 +32,7 @@ def main_page():
     description = st.markdown(general_description)
 
     # set tab names here
-    tab1, tab2, tab3, tab4 = st.tabs(["Annotation", "Statistics", "Spectrum", "Fraggraph"])
+    tab1, tab2, tab3 = st.tabs(["Annotation", "Statistics", "Fraggraph"])
 
     div = \
     """
@@ -70,18 +70,6 @@ def main_page():
     with tab3:
         tab3_main()
 
-    div = \
-    """
-    #####################################################
-    ##                                                 ##
-    ##                   -- TAB 4 --                   ##
-    ##                                                 ##
-    #####################################################
-    """
-
-    # with tab4:
-    #     tab4_main()
-
 # side bar and main page loader
 def main(argv = None) -> None:
 
@@ -94,8 +82,8 @@ def main(argv = None) -> None:
                        page_icon = ":test_tube:",
                        layout = "wide",
                        initial_sidebar_state = "expanded",
-                       menu_items = {"Get Help": "https://github.com/michabirklbauer/internal-ions/discussions",
-                                     "Report a bug": "https://github.com/michabirklbauer/internal-ions/issues",
+                       menu_items = {"Get Help": f"https://github.com/michabirklbauer/{REPO_NAME}/discussions",
+                                     "Report a bug": f"https://github.com/michabirklbauer/{REPO_NAME}/issues",
                                      "About": about_str}
                        )
 
@@ -114,9 +102,9 @@ def main(argv = None) -> None:
         # tolerance
         ttolerance_desc = st.markdown("**Tolerance**")
         ttolerance = st.number_input("Tolerance in Da:",
-                                 key = "tolerance",
-                                 value = 0.02,
-                                 help = "Fragment ion mass tolerance in Dalton.")
+                                     key = "tolerance",
+                                     value = 0.02,
+                                     help = "Fragment ion mass tolerance in Dalton.")
 
         # ions
         fions_selectbox_desc = st.markdown("**Ions**")
@@ -143,26 +131,45 @@ def main(argv = None) -> None:
                                                       "Ions": ["b, y", "c, z"]}),
                                         hide_index = True,
                                         use_container_width = True)
-        
-        # Non deconvoluted spectra 
-        st.markdown("---")
+
+        # Non deconvoluted spectra
+        st.markdown("----")
         fions_selectbox_desc = st.markdown("**Annotation of non-deconvoluted spectra**")
-           
-        deconvoluted_spectra = st.checkbox("Deconvoluted spectra", value=False, key="deconvoluted_spectra")
-        
+
+        deconvoluted_spectra = st.checkbox("Deconvoluted spectra",
+                                           key = "deconvoluted_spectra",
+                                           value = False,
+                                           help = "If spectra are already deconvoluted.")
+
         if not deconvoluted_spectra:
             # Add additional parameters here
-            
             monoisotopic = False
-            max_charge_auto = st.checkbox("Max Charge Auto", value=False, key="max_charge_auto", help="Automatically determine the maximum charge state of the precursor to consider.")
-            if not max_charge_auto:        
-                max_charge = st.number_input("Max Charge:", key = "max_charge", value = 3, format="%d", help="Maximum charge state of the precursor to consider.")
-                
-            max_isotope_auto = st.checkbox("Max Isotope Auto", value=False, key="max_isotope_auto", help="Automatically determine the maximum isotope to consider.")
+            max_charge_auto = st.checkbox("Auto-select Max Charge",
+                                          key = "max_charge_auto",
+                                          value = False,
+                                          help = "Automatically determine the maximum charge state of the precursor to consider.")
+            if not max_charge_auto:
+                max_charge = st.number_input("Max Charge:",
+                                             key = "max_charge",
+                                             value = 3,
+                                             format = "%d",
+                                             help = "Maximum charge state of the precursor to consider.")
+
+            max_isotope_auto = st.checkbox("Auto-select Max Isotope",
+                                           key = "max_isotope_auto",
+                                           value = False,
+                                           help = "Automatically determine the maximum isotope to consider.")
             if not max_isotope_auto:
-                max_isotope = st.number_input("Max Isotope:", key = "max_isotope", value = 5, format="%d", help="Maximum isotope to consider.")
-            
-            charge_reduction = st.checkbox("Charge Reduction", value=False, key="charge_reduction", help="Charge reduction implies that a charge is lost upon fragmentation event. This is typically the case for electron-based fragmentation (e.g. ETD ECD).")
+                max_isotope = st.number_input("Max Isotope:",
+                                              key = "max_isotope",
+                                              value = 5,
+                                              format = "%d",
+                                              help = "Maximum isotope to consider.")
+
+            charge_reduction = st.checkbox("Charge Reduction",
+                                           key = "charge_reduction",
+                                           value = False,
+                                           help = "Charge reduction implies that a charge is lost upon fragmentation event. This is typically the case for electron-based fragmentation (e.g. ETD ECD).")
         else:
             # Set default parameters here
             max_charge = 1
@@ -171,8 +178,6 @@ def main(argv = None) -> None:
             max_isotope = 5
             charge_reduction = False
 
-        
-        
     ############################################################################
         contact_header = st.subheader("About the Project", divider = DIV_COLOR)
 
@@ -186,7 +191,7 @@ def main(argv = None) -> None:
         license_str = "**License:** [???]()"
         license = st.markdown(license_str)
 
-        project_str = "**Project Page:** [GitHub](https://github.com/michabirklbauer/internal-ions/)"
+        project_str = f"**Project Page:** [GitHub](https://github.com/michabirklbauer/{REPO_NAME}/)"
         project = st.markdown(project_str)
 
     main_page()
