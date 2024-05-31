@@ -2,3 +2,5 @@
 base="light"
 [server]
 maxUploadSize=2048
+enableXsrfProtection = false
+enableCORS = false
