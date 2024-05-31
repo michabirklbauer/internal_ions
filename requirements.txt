@@ -1,4 +1,5 @@
 # Put your requirements here. E.g:
+streamlit==1.28.2
 numpy
 pandas
 pyteomics
@@ -8,7 +9,6 @@ spectrum_utils
 psm_utils
 ms_deisotope
 openpyxl
-streamlit
 numba
 joblib
 tqdm
