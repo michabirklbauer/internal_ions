@@ -55,7 +55,7 @@ def main(argv = None) -> None:
 
     identifications_file = st.file_uploader("Upload an identification file:",
                                             key = "identifications_file",
-                                            type = ["mzid"],
+                                            type = None, #["mzid"],
                                             on_change = reset_identifications,
                                             help = "Upload a identification file that contains PSMs of the spectrum file in .mzid format.")
 
