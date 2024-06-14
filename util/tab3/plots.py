@@ -41,8 +41,14 @@ def plot_spectra_chromatogram(spectra: dict) -> pd.DataFrame:
     fig = go.Figure()
 
     #get the min and max intensity
-    min_intensity = min([spectrum["precursor"][1] for spectrum in spectra.values()])
-    max_intensity = max([spectrum["precursor"][1] for spectrum in spectra.values()])
+    intensity_array = [spectrum["precursor"][1] for spectrum in spectra.values() if spectrum["precursor"][1]]
+
+    # if no values, return empty figure
+    if len(intensity_array) <= 0:
+        return fig
+
+    min_intensity = min(intensity_array)
+    max_intensity = max(intensity_array)
     print("min/max intensity: ", min_intensity, max_intensity)
     colorscale = [[0, 'blue'], [1, 'red']]  # Define your desired colorscale
 
@@ -51,8 +57,9 @@ def plot_spectra_chromatogram(spectra: dict) -> pd.DataFrame:
         min_intensity = 0
         max_intensity = 1
 
-
     for scan_nr, spectrum in spectra.items():
+        if spectrum["precursor"][1] is None:
+            continue
         intensity = spectrum["precursor"][1]
         color = (intensity - min_intensity) / (max_intensity - min_intensity)  # Calculate the color value based on intensity
 

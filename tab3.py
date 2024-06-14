@@ -75,7 +75,7 @@ def main(argv = None) -> None:
 
         with spec_sel_col1:
             first_scan = st.selectbox("Select the first scan number to analyse:",
-                                      st.session_state["spectra"]["spectra"].keys(),
+                                      sorted(st.session_state["spectra"]["spectra"].keys()),
                                       index = 0,
                                       help = "Select the scan number where analysis should start.",
                                       key="first_scan_filter")
@@ -106,7 +106,7 @@ def main(argv = None) -> None:
 
         with spec_sel_col2:
             last_scan = st.selectbox("Select the last scan number to analyse:",
-                                     st.session_state["spectra"]["spectra"].keys(),
+                                     sorted(st.session_state["spectra"]["spectra"].keys()),
                                      index = len(st.session_state["spectra"]["spectra"].keys()) - 1,
                                      help = "Select the scan number where analysis should end.",
                                      key="last_scan_filter")
