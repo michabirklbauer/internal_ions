@@ -245,7 +245,7 @@ def main(argv = None) -> None:
     else:
         st.error("No spectra file uploaded! Please upload a file in the \"Annotation\" tab!", icon = "🚨")
 
-    if "filtered_spectra" in st.session_state:
+    if "consensus_spectrum" in st.session_state:
 
     ############################################################################
         spectrum_viewer_header = st.subheader("Spectrum Viewer", divider = DIV_COLOR)
