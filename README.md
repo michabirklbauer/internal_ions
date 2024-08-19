@@ -27,4 +27,4 @@
 
 ## Running the App via Docker
 
-- Running this app via Docker is possible with `docker run -p 8501:8501 michabirklbauer/internalionsv2:latest`
+- Running this app via Docker is possible with `docker run -p 8501:8501 michabirklbauer/internalionexplorer:latest`
