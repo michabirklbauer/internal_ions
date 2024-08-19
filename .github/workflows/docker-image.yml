@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build the Docker image
       run: |
         echo ${{ secrets.DOCKER_PASSWORD }} | docker login --username michabirklbauer --password-stdin
-        docker build . --file Dockerfile --tag michabirklbauer/internalionsv2:latest
-        docker push michabirklbauer/internalionsv2:latest
+        docker build . --file Dockerfile --tag michabirklbauer/internalionexplorer:latest
+        docker push michabirklbauer/internalionexplorer:latest
         GIT_SHA="$(git rev-parse --short HEAD)"
-        docker tag michabirklbauer/internalionsv2:latest michabirklbauer/internalionsv2:$GIT_SHA
-        docker push michabirklbauer/internalionsv2:$GIT_SHA
+        docker tag michabirklbauer/internalionexplorer:latest michabirklbauer/internalionexplorer:$GIT_SHA
+        docker push michabirklbauer/internalionexplorer:$GIT_SHA
