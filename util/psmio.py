@@ -93,11 +93,12 @@ def read_other(filename: str | BinaryIO, name: str, verbose: bool = False) -> Di
             peptides_to_scannr[peptide].add(scan_nr)
         else:
             peptides_to_scannr[peptide] = {scan_nr}
-        for protein in psm["protein_list"]:
-            if protein in proteins_to_scannr:
-                proteins_to_scannr[protein].add(scan_nr)
-            else:
-                proteins_to_scannr[protein] = {scan_nr}
+        if psm["protein_list"] is not None:
+            for protein in psm["protein_list"]:
+                if protein in proteins_to_scannr:
+                    proteins_to_scannr[protein].add(scan_nr)
+                else:
+                    proteins_to_scannr[protein] = {scan_nr}
         nr_psms += 1
         if nr_psms % 1000 == 0:
             print(f"\t{nr_psms}")
