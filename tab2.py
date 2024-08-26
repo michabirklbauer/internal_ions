@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from util.tab2.filter import filter_dataframes
+from util.tab2.filter2 import filter_dataframe
 
 # don't use star imports here!
 from util.tab2.plots import common_type_hist
@@ -72,8 +73,16 @@ def main(argv = None) -> None:
                 frag_preview = st.dataframe(st.session_state["dataframes"][0], height = 400, use_container_width = True)
             else:
                 frag_preview = st.dataframe(st.session_state["dataframes"][0].dropna(subset = "frag_seq"), height = 400, use_container_width = True)
+            modify_frag = st.checkbox("Filter fragment-centric dataframe",
+                                      value = False,
+                                      help = "Display filter option for the fragment-centric dataframe.")
+            st.session_state["frag_center_filtered"] = filter_dataframe(st.session_state["dataframes"][0], modify_frag)
             spec_preview_text = st.markdown("Data of the spectrum-centric dataframe:")
             spec_preview = st.dataframe(st.session_state["dataframes"][1], height = 400, use_container_width = True)
+            modify_spec = st.checkbox("Filter spectrum-centric dataframe",
+                                      value = False,
+                                      help = "Display filter option for the spectrum-centric dataframe.")
+            st.session_state["spec_center_filtered"] = filter_dataframe(st.session_state["dataframes"][1], modify_spec)
 
     ############################################################################
             filter_dfs_header = st.subheader("Filter Results", divider = DIV_COLOR)
@@ -167,7 +176,7 @@ def main(argv = None) -> None:
                                 "z+3" in st.session_state["selected_ions_cterm"]]
             # END filtering options
 
-            filtered_fragments_df, filtered_spectra_df = filter_dataframes(st.session_state["dataframes"],
+            filtered_fragments_df, filtered_spectra_df = filter_dataframes([st.session_state["frag_center_filtered"], st.session_state["spec_center_filtered"]],
                                                                            start_seq_length,
                                                                            end_seq_length,
                                                                            start_frag_length,
