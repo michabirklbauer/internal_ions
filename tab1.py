@@ -143,9 +143,9 @@ def main(argv = None) -> None:
     if "dataframes" in st.session_state:
         results_preview_header = st.subheader("Results Preview", divider = DIV_COLOR)
         preview_csv_1_desc = st.markdown("Fragment-centric")
-        preview_csv_1 = st.dataframe(st.session_state["dataframes"][0].head(10))
+        preview_csv_1 = st.dataframe(st.session_state["dataframes"][0].head(10), use_container_width = True)
         preview_csv_1_desc = st.markdown("Spectrum-centric")
-        preview_csv_1 = st.dataframe(st.session_state["dataframes"][1].head(10))
+        preview_csv_1 = st.dataframe(st.session_state["dataframes"][1].head(10), use_container_width = True)
 
         results_header = st.subheader("Download Results", divider = DIV_COLOR)
 

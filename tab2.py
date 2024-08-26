@@ -64,10 +64,16 @@ def main(argv = None) -> None:
 
     ############################################################################
             show_previews_header = st.subheader("View Result", divider = DIV_COLOR)
-            frag_preview_text = st.markdown("Preview of the fragment-centric dataframe:")
-            frag_preview = st.dataframe(st.session_state["dataframes"][0], height = 200)
-            spec_preview_text = st.markdown("Preview of the spectrum-centric dataframe:")
-            spec_preview = st.dataframe(st.session_state["dataframes"][1], height = 200)
+            frag_preview_text = st.markdown("Data of the fragment-centric dataframe:")
+            frag_preview_include_na = st.checkbox("Show non-annotated fragments",
+                                                  value = False,
+                                                  help = "Whether or not to show non-annotated fragments in the dataframe.")
+            if frag_preview_include_na:
+                frag_preview = st.dataframe(st.session_state["dataframes"][0], height = 400, use_container_width = True)
+            else:
+                frag_preview = st.dataframe(st.session_state["dataframes"][0].dropna(subset = "frag_seq"), height = 400, use_container_width = True)
+            spec_preview_text = st.markdown("Data of the spectrum-centric dataframe:")
+            spec_preview = st.dataframe(st.session_state["dataframes"][1], height = 400, use_container_width = True)
 
     ############################################################################
             filter_dfs_header = st.subheader("Filter Results", divider = DIV_COLOR)
