@@ -78,8 +78,8 @@ def main(argv = None) -> None:
             spec_preview = st.dataframe(st.session_state["dataframes"][1], height = 400, use_container_width = True)
             modify = st.checkbox("Filter data", value=False, help="Display filter options")
             if modify:
-                st.session_state["frag_center_filtered"] = filter_dataframe(st.session_state["dataframes"][0], 'spectrum')
-                st.session_state["spec_center_filtered"] = filter_dataframe(st.session_state["dataframes"][1], 'fragment')
+                st.session_state["frag_center_filtered"] = filter_dataframe(st.session_state["dataframes"][0], 'fragment')
+                st.session_state["spec_center_filtered"] = filter_dataframe(st.session_state["dataframes"][1], 'spectrum')
             else:
                 st.session_state["frag_center_filtered"] = st.session_state["dataframes"][0]
                 st.session_state["spec_center_filtered"] = st.session_state["dataframes"][1]
