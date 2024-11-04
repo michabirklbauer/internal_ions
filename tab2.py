@@ -64,26 +64,11 @@ def main(argv = None) -> None:
             st.success(f"Loaded results from {loaded_from_which_files}!")
 
     ############################################################################
-            show_previews_header = st.subheader("View Result", divider = DIV_COLOR)
-            frag_preview_text = st.markdown("Data of the fragment-centric dataframe:")
+            st.subheader("View Result", divider=DIV_COLOR)
+
             N_ion = st.checkbox("Show non-annotated fragments",
                                 value=False,
                                 help="Whether or not to show non-annotated fragments in the output.")
-            if N_ion:
-                frag_preview = st.dataframe(st.session_state["dataframes"][0], height = 400, use_container_width = True)
-            else:
-                frag_preview = st.dataframe(st.session_state["dataframes"][0].dropna(subset = "frag_seq"), height = 400, use_container_width = True)
-
-            spec_preview_text = st.markdown("Data of the spectrum-centric dataframe:")
-            spec_preview = st.dataframe(st.session_state["dataframes"][1], height = 400, use_container_width = True)
-            modify = st.checkbox("Filter data", value=False, help="Display filter options")
-            if modify:
-                tmp_frag, tmp_spec = filter_dataframe(st.session_state["dataframes"][0], st.session_state["dataframes"][1], 'fragment')
-                st.session_state["spec_center_filtered"], st.session_state["frag_center_filtered"] = filter_dataframe(tmp_spec, tmp_frag, 'spectrum')
-            else:
-                st.session_state["frag_center_filtered"] = st.session_state["dataframes"][0]
-                st.session_state["spec_center_filtered"] = st.session_state["dataframes"][1]
-
             ion_filter_param = [N_ion,
                                 "a" in st.session_state["selected_ions_nterm"],
                                 "b" in st.session_state["selected_ions_nterm"],
@@ -98,8 +83,19 @@ def main(argv = None) -> None:
                                 "z+1" in st.session_state["selected_ions_cterm"],
                                 "z+2" in st.session_state["selected_ions_cterm"],
                                 "z+3" in st.session_state["selected_ions_cterm"]]
+
             st.session_state["frag_center_filtered"], st.session_state["spec_center_filtered"] = filter_dataframes(
-                [st.session_state["frag_center_filtered"], st.session_state["spec_center_filtered"]], ion_filter_param)
+                st.session_state["dataframes"], ion_filter_param)
+
+            modify = st.checkbox("Filter data", value=False, help="Display filter options")
+            if modify:
+                tmp_frag, tmp_spec = filter_dataframe(st.session_state["frag_center_filtered"], st.session_state["spec_center_filtered"], 'fragment')
+                st.session_state["spec_center_filtered"], st.session_state["frag_center_filtered"] = filter_dataframe(tmp_spec, tmp_frag, 'spectrum')
+
+            st.markdown("Data of the fragment-centric dataframe:")
+            st.dataframe(st.session_state["frag_center_filtered"], height=400, use_container_width=True)
+            st.markdown("Data of the spectrum-centric dataframe:")
+            st.dataframe(st.session_state["spec_center_filtered"], height=400, use_container_width=True)
 
     ############################################################################
 
