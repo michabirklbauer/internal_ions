@@ -89,7 +89,17 @@ def fragment_annotation(
 
     P = Parser(is_streamlit = True)
 
-    psms = P.read(spectra_file, ident_file, file_format = file_format)
+    all_psms = P.read(spectra_file, ident_file, file_format = file_format)
+    # construct list of psms with only one psm per spectrum
+    psms = list()
+    # construct dict of psms mapping spectrum_id to nr_idents_with_same_rank
+    psms_dict = dict()
+    for psm in all_psms:
+        if psm.spectrum_id in psms_dict:
+            psms_dict[psm.spectrum_id]["nr_idents_with_same_rank"] += 1
+        else:
+            psms_dict[psm.spectrum_id] = {"nr_idents_with_same_rank": 1}
+            psms.append(psm)
 
     print("\nAnnotating spectra in parallel...\n")
 
@@ -112,14 +122,26 @@ def fragment_annotation(
         p_psms = tqdm(psms) # tqdm is good for cli but bad for streamlit progress
         p_result = Parallel(n_jobs = nr_used_cores)(delayed(calculate_ions_for_psms)(psm, tolerance, fragment_types, charges, losses, deisotope) for psm in p_psms)
         psms_json = list(p_result)
+        
+    for psm in psms_json:
+        if psm["spectrum_id"] not in psms_dict:
+            raise RuntimeError("Spectrum ID not found in parsed PSM dict.")
+        psms_dict[psm["spectrum_id"]]["sequence"] = psm["sequence"]
+        psms_dict[psm["spectrum_id"]]["proforma"] = psm["proforma"]
+        psms_dict[psm["spectrum_id"]]["annotation"] = psm["annotation"]
+        psms_dict[psm["spectrum_id"]]["spectrum_id"] = psm["spectrum_id"]
+        psms_dict[psm["spectrum_id"]]["identification_score"] = psm["identification_score"]
+        psms_dict[psm["spectrum_id"]]["rank"] = psm["rank"]
+        # "precursor_charge": int(psm.get_precursor_charge()),
+        psms_dict[psm["spectrum_id"]]["precursor_intensity"] = psm["precursor_intensity"]
 
     if write_file:
         with open(P.output_fname, "w", encoding = "utf8") as f:
-            json.dump(psms_json, f)
+            json.dump(psms_dict, f)
 
     print("\nFinished spectrum annotation.")
 
-    return psms_json
+    return psms_dict
 
 def calculate_ions_for_psms(psm,
                             tolerance: float,
