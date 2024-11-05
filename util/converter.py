@@ -117,7 +117,8 @@ class JSONConverter:
                     "prop_intensity_to_base_peak": [],
                     "modification": [],
                     "spectrum_id": [],
-                    "ambiguity": []}
+                    "ambiguity": [],
+                    "nr_idents_with_same_rank": []}
 
         # spectrum-centric dataframe structure
         spectrum = {"perc_internal": [],
@@ -137,9 +138,11 @@ class JSONConverter:
                     "spectrum_id": [],
                     "score": [],
                     "peptide_seq": [],
-                    "peptide_length": []}
+                    "peptide_length": [],
+                    "nr_idents_with_same_rank": []}
 
-        for entry in data:
+        for key in data.keys():
+            entry = data[key]
             pep_seq = entry["sequence"]
             pep_len = len(pep_seq)
 
@@ -164,6 +167,7 @@ class JSONConverter:
                     fragment["modification"].append("")
                     fragment["spectrum_id"].append(self.__get_spectrum_id(entry))
                     fragment["ambiguity"].append(self.__get_ambiguity(entry["annotation"], i))
+                    fragment["nr_idents_with_same_rank"].append(entry["nr_idents_with_same_rank"])
                 else:
                     start, end, ion_cap_start, ion_cap_end, charge, formula = self.__parse_fragment_code(code)
                     frag_seq = pep_seq[start - 1:end]
@@ -184,6 +188,7 @@ class JSONConverter:
                     fragment["modification"].append(self.__parse_modfication(entry["proforma"], start, end))
                     fragment["spectrum_id"].append(self.__get_spectrum_id(entry))
                     fragment["ambiguity"].append(self.__get_ambiguity(entry["annotation"], i))
+                    fragment["nr_idents_with_same_rank"].append(entry["nr_idents_with_same_rank"])
 
             # Spectrum-centric
             percentages_and_total_intensities = self.__calculate_internal_terminal_non_annotated_ions(entry["annotation"]["theoretical_code"], entry["annotation"]["intensity"])
@@ -206,6 +211,7 @@ class JSONConverter:
             spectrum["score"].append(self.__get_identification_score(entry))
             spectrum["peptide_seq"].append(pep_seq)
             spectrum["peptide_length"].append(len(pep_seq))
+            spectrum["nr_idents_with_same_rank"].append(entry["nr_idents_with_same_rank"])
 
         return [pd.DataFrame(fragment), pd.DataFrame(spectrum)]
 

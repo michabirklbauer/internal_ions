@@ -69,9 +69,14 @@ class Fragannot:
         psms = P.read(spectra_file, ident_file, file_format=file_format)
         i = 0
 
-        psms_json = []
+        psms_json = dict()
 
         for psm in psms:
+            psms_json_key = psm.spectrum_id
+            # skip if one psm of the same spectrum has already been done
+            if psms_json_key in psms_json:
+                psms_json[psms_json_key]["nr_idents_with_same_rank"] += 1
+                continue
 
             if (i + 1) % 100 == 0:
                 self.logger.info(f"{i + 1} spectra annotated")
@@ -110,7 +115,7 @@ class Fragannot:
             psm.spectrum["theoretical_code"] = annotation_code
             psm.spectrum["matches_count"] = annotation_count
 
-            psms_json.append(
+            psms_json[psms_json_key] = \
                 {
                     "sequence": psm.peptidoform.sequence,
                     "proforma": psm.peptidoform.proforma,
@@ -118,10 +123,10 @@ class Fragannot:
                     "spectrum_id": psm.spectrum_id,
                     "identification_score": psm.score,
                     "rank": psm.rank,
+                    "nr_idents_with_same_rank": 1,
                     # "precursor_charge": int(psm.get_precursor_charge()),
-                    "precursor_intensity": 666,
+                    "precursor_intensity": 666, # what??
                 }
-            )
             i += 1
 
             # if i == 1000:
