@@ -39,6 +39,7 @@ def main(argv = None) -> None:
                                      on_change = reset_spectra,
                                      help = "Upload a spectrum file to be analyzed in .mgf format.")
 
+    w = """
     if spectrum_file is not None:
         with st.status("Reading spectra...") as spectra_reading_status:
             with st_stdout("info"):
@@ -51,7 +52,7 @@ def main(argv = None) -> None:
                         st.session_state["rerun_spectra_reading"] = False
             read_spectra_successfully = st.success("Read all spectra successfully!")
             spectra_reading_status.update(label = f"Read all spectra from file {st.session_state.spectrum_file.name} successfully!", state = "complete")
-
+"""
 
     identifications_file = st.file_uploader("Upload an identification file:",
                                             key = "identifications_file",
@@ -59,6 +60,7 @@ def main(argv = None) -> None:
                                             on_change = reset_identifications,
                                             help = "Upload a identification file that contains PSMs of the spectrum file in .mzid format.")
 
+    w = """
     if identifications_file is not None:
         with st.status("Reading identifications...") as identifications_reading_status:
             with st_stdout("info"):
@@ -71,6 +73,7 @@ def main(argv = None) -> None:
                         st.session_state["rerun_identifications_reading"] = False
             read_identifications_successfully = st.success("Read all identifications successfully!")
             identifications_reading_status.update(label = f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state = "complete")
+"""
 
     st.session_state["fragannot_call_ion_selection"] = st.session_state["selected_ions_nterm"] + st.session_state["selected_ions_cterm"]
 
