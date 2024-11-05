@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-## taken from
-## https://blog.streamlit.io/auto-generate-a-dataframe-filtering-ui-in-streamlit-with-filter_dataframe/
+# taken from
+# https://blog.streamlit.io/auto-generate-a-dataframe-filtering-ui-in-streamlit-with-filter_dataframe/
 
 from pandas.api.types import (
     is_categorical_dtype,
@@ -12,19 +12,19 @@ from pandas.api.types import (
 import pandas as pd
 import streamlit as st
 
-def filter_dataframe(df: pd.DataFrame, modify: bool) -> pd.DataFrame:
+
+def filter_dataframe(df: pd.DataFrame, other: pd.DataFrame, label: str) -> pd.DataFrame:
     """
     Adds a UI on top of a dataframe to let viewers filter columns
 
     Args:
         df (pd.DataFrame): Original dataframe
+        other (pd.DataFrame): The other (spectrum/fragment) dataframe for coupled filtering
+        label (str): used to show filtering options
 
     Returns:
         pd.DataFrame: Filtered dataframe
     """
-
-    if not modify:
-        return df
 
     df = df.copy()
 
@@ -42,7 +42,7 @@ def filter_dataframe(df: pd.DataFrame, modify: bool) -> pd.DataFrame:
     modification_container = st.container()
 
     with modification_container:
-        to_filter_columns = st.multiselect("Filter dataframe on", df.columns)
+        to_filter_columns = st.multiselect(f"Filter {label} dataframe on", df.columns)
         for column in to_filter_columns:
             left, right = st.columns((1, 20))
             # Treat columns with < 10 unique values as categorical
@@ -84,4 +84,8 @@ def filter_dataframe(df: pd.DataFrame, modify: bool) -> pd.DataFrame:
                 if user_text_input:
                     df = df[df[column].astype(str).str.contains(user_text_input)]
 
-    return df
+    # filter the other dataframe based on spectrum IDs
+    if to_filter_columns:
+        other = other.loc[other.spectrum_id.isin(df.spectrum_id)]
+
+    return df, other
