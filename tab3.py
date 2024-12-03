@@ -281,7 +281,27 @@ def main(argv = None) -> None:
                                            help = "Specify a peptidoform to compare the fragment graph of the first peptidoform to, e.g. " +
                                                   "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE.")
         elif "selected_protein_scans" in st.session_state and st.session_state["selected_protein_scans"] is not None:
-            pass
+            selected_protein = st.session_state["selected_protein_scans"]
+            possible_peptides = [peptidoform for peptidoform in st.session_state["identifications"]["proteins_to_peptides"][selected_protein]]
+            fg_selected_peptide1 = st.selectbox("Select a peptide from the selected protein:",
+                                                possible_peptides,
+                                                index = None,
+                                                help = "Select a peptide to consider for generating the fragment graph, e.g. " +
+                                                       "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE.")
+
+            if fg_selected_peptide1 is not None:
+                possible_peptidoforms = [fg_selected_peptide1] + \
+                                        [peptidoform for peptidoform in st.session_state["identifications"]["peptide_to_peptidoforms"][fg_selected_peptide1]]
+                fg_peptidoform1 = st.selectbox("Specify a peptidoform to consider:",
+                                               possible_peptidoforms,
+                                               index = None,
+                                               help = "Specify a peptidoform to consider for generating the fragment graph, e.g. " +
+                                                      "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE.")
+                fg_peptidoform2 = st.selectbox("Optionally, specify a peptidoform to compare to:",
+                                               possible_peptidoforms,
+                                               index = None,
+                                               help = "Specify a peptidoform to compare the fragment graph of the first peptidoform to, e.g. " +
+                                                      "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE.")
         else:
             fg_peptidoform1 = st.text_input("Specify a peptidoform to consider:",
                                             value = None,
