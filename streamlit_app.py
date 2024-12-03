@@ -32,7 +32,7 @@ def main_page():
     description = st.markdown(general_description)
 
     # set tab names here
-    tab1, tab2, tab3 = st.tabs(["Annotation", "Statistics", "Fraggraph"])
+    tab1, tab2, tab3 = st.tabs(["Data Import & Annotation", "Statistics", "Fraggraph"])
 
     div = \
     """

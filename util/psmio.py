@@ -145,9 +145,9 @@ def read_identifications(filename: str | BinaryIO,
         if psm["protein_list"] is not None:
             for protein in psm["protein_list"]:
                 if protein in proteins_to_peptides:
-                    proteins_to_scannr[protein].add(peptide)
+                    proteins_to_peptides[protein].add(peptide)
                 else:
-                    proteins_to_scannr[protein] = {peptide}
+                    proteins_to_peptides[protein] = {peptide}
         # end parse
         nr_psms += 1
         if nr_psms % 1000 == 0:
