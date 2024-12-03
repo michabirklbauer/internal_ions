@@ -56,7 +56,7 @@ def parse_scannr(spectrum_id: str | int, i: int, pattern: str = "\\.\\d+\\.") ->
 
     # else try parse whole title
     try:
-        return (0, int(spectrum_id))
+        return (0, int(float(spectrum_id)))
     except:
         pass
 
@@ -100,6 +100,7 @@ def read_identifications(filename: str | BinaryIO,
     peptides_to_scannr = dict()
     scannr_to_peptidoforms = dict()
     peptide_to_peptidoforms = dict()
+    proteins_to_peptides = dict()
 
     print("Read identifications in total:")
 
@@ -140,6 +141,13 @@ def read_identifications(filename: str | BinaryIO,
             peptide_to_peptidoforms[peptide].add(psm.peptidoform.proforma)
         else:
             peptide_to_peptidoforms[peptide] = {psm.peptidoform.proforma}
+        # proteins_to_peptides
+        if psm["protein_list"] is not None:
+            for protein in psm["protein_list"]:
+                if protein in proteins_to_peptides:
+                    proteins_to_scannr[protein].add(peptide)
+                else:
+                    proteins_to_scannr[protein] = {peptide}
         # end parse
         nr_psms += 1
         if nr_psms % 1000 == 0:
@@ -151,4 +159,5 @@ def read_identifications(filename: str | BinaryIO,
             "proteins_to_scannr": proteins_to_scannr,
             "peptides_to_scannr": peptides_to_scannr,
             "scannr_to_peptidoforms": scannr_to_peptidoforms,
-            "peptide_to_peptidoforms": peptide_to_peptidoforms}
+            "peptide_to_peptidoforms": peptide_to_peptidoforms,
+            "proteins_to_peptides": proteins_to_peptides}
