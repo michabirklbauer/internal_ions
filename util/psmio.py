@@ -110,7 +110,7 @@ def read_identifications(filename: str | BinaryIO,
         parsed_scan_nr = parse_scannr(psm["spectrum_id"], 0, pattern)
         scan_nr = parsed_scan_nr[1]
         if parsed_scan_nr[0] != 0:
-            raise RuntimeError(f"Could not parse scan nr from spectrum id {psm["spectrum_id"]}.")
+            raise RuntimeError(f"Could not parse scan nr from spectrum id {psm['spectrum_id']}.")
         # this should return the unmodified peptide sequence
         # according to https://psm-utils.readthedocs.io/en/v1.2.0/api/psm_utils/#psm_utils.Peptidoform
         peptide = psm.peptidoform.sequence
