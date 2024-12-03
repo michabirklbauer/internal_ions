@@ -97,6 +97,8 @@ def read_identifications(filename: str | BinaryIO,
 
     proteins_to_scannr = dict()
     peptides_to_scannr = dict()
+    scannr_to_peptidoforms = dict()
+    peptide_to_peptidoforms = dict()
 
     print("Read identifications in total:")
 
@@ -112,20 +114,40 @@ def read_identifications(filename: str | BinaryIO,
         # this should return the unmodified peptide sequence
         # according to https://psm-utils.readthedocs.io/en/v1.2.0/api/psm_utils/#psm_utils.Peptidoform
         peptide = psm.peptidoform.sequence
+        # begin parse necessary information
+        # peptides_to_scannr
         if peptide in peptides_to_scannr:
             peptides_to_scannr[peptide].add(scan_nr)
         else:
             peptides_to_scannr[peptide] = {scan_nr}
+        # proteins_to_scannr
         if psm["protein_list"] is not None:
             for protein in psm["protein_list"]:
                 if protein in proteins_to_scannr:
                     proteins_to_scannr[protein].add(scan_nr)
                 else:
                     proteins_to_scannr[protein] = {scan_nr}
+        # scannr_to_peptidoforms
+        # using psm.peptidoform.proforma
+        # see https://psm-utils.readthedocs.io/en/v1.2.0/api/psm_utils/#psm_utils.Peptidoform
+        if scan_nr in scannr_to_peptidoforms:
+            scannr_to_peptidoforms[scan_nr].add(psm.peptidoform.proforma)
+        else:
+            scannr_to_peptidoforms[scan_nr] = {psm.peptidoform.proforma}
+        # peptide_to_peptidoforms
+        if peptide in peptide_to_peptidoforms:
+            peptide_to_peptidoforms[peptide].add(psm.peptidoform.proforma)
+        else:
+            peptide_to_peptidoforms[peptide] = {psm.peptidoform.proforma}
+        # end parse
         nr_psms += 1
         if nr_psms % 1000 == 0:
             print(f"\t{nr_psms}")
 
     print(f"\nFinished reading {nr_psms} identifications!")
 
-    return {"name": name, "proteins": proteins_to_scannr, "peptides": peptides_to_scannr}
+    return {"name": name,
+            "proteins_to_scannr": proteins_to_scannr,
+            "peptides_to_scannr": peptides_to_scannr,
+            "scannr_to_peptidoforms": scannr_to_peptidoforms,
+            "peptide_to_peptidoforms": peptide_to_peptidoforms}
