@@ -162,12 +162,8 @@ def filter_spectra(filename: str | BinaryIO, filter_params: Dict[str, Any], name
                 pass
                 # todo implement
 
-            if "scans_from_protein" in filter_params:
-                if scan_nr not in filter_params["scans_from_protein"]:
-                    continue
-
-            if "scans_from_peptide" in filter_params:
-                if scan_nr not in filter_params["scans_from_peptide"]:
+            if "scans" in filter_params:
+                if scan_nr not in filter_params["scans"]:
                     continue
 
             spectra.append(spectrum)

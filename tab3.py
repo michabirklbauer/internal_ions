@@ -16,6 +16,7 @@ from util.tab3.fraggraph import main as fraggraph_main
 
 from util.constants import DIV_COLOR
 
+from typing import List
 from typing import Dict
 from typing import Any
 
@@ -46,6 +47,13 @@ def get_maxrt(selection: Dict[str, Any]) -> float:
 
     box = selection.selection.box[-1]
     return max(box["x"])
+
+def get_selected_scan_numbers(scan_number_str: str) -> List[int]:
+    scan_nrs = set()
+    for scan_nr in scan_number_str.split(","):
+        if scan_nr.strip() != "":
+            scan_nrs.add(int(scan_nr.strip()))
+    return list(scan_nrs)
 
 def main(argv = None) -> None:
 
@@ -154,6 +162,23 @@ def main(argv = None) -> None:
                                                   index = None,
                                                   help = "Select a peptide of interest.")
 
+            cond1 = "selected_protein_scans" in st.session_state and st.session_state["selected_protein_scans"] is not None
+            cond2 = "selected_peptide_scans" in st.session_state and st.session_state["selected_peptide_scans"] is not None
+            if cond1 or cond2:
+                selected_scans = set()
+                if "selected_protein_scans" in st.session_state:
+                    if st.session_state["selected_protein_scans"] is not None:
+                        scans_from_protein_val = st.session_state["selected_protein_scans"]
+                        selected_scans = selected_scans.union(st.session_state["identifications"]["proteins_to_scannr"][scans_from_protein_val])
+                if "selected_peptide_scans" in st.session_state:
+                    if st.session_state["selected_peptide_scans"] is not None:
+                        scans_from_peptide_val = st.session_state["selected_peptide_scans"]
+                        selected_scans = selected_scans.union(st.session_state["identifications"]["peptides_to_scannr"][scans_from_peptide_val])
+                selected_scans_box = st.text_area("Currently selected mass spectra by means of scan numbers:",
+                                                  value = ",".join([str(s) for s in sorted(selected_scans)]),
+                                                  key = "selected_scan_numbers",
+                                                  help = "Currently selected mass spectra by means of scan numbers. Add or delete scan numbers here to modify.")
+
         else:
             st.info("No identifications file was provided! Filtering based on proteins/peptides not available unless a identifications file is uploaded in the \"Annotation\" tab!")
 
@@ -194,6 +219,8 @@ def main(argv = None) -> None:
                     scans_from_protein_list = [i for i in range(int(first_scan), int(last_scan) + 1)]
                     scans_from_peptide_val = None
                     scans_from_peptide_list = [i for i in range(int(first_scan), int(last_scan) + 1)]
+                    selected_scans_val = None
+                    selected_scans_list = [i for i in range(int(first_scan), int(last_scan) + 1)]
                     if "selected_protein_scans" in st.session_state:
                         if st.session_state["selected_protein_scans"] is not None:
                             scans_from_protein_val = st.session_state["selected_protein_scans"]
@@ -202,6 +229,11 @@ def main(argv = None) -> None:
                         if st.session_state["selected_peptide_scans"] is not None:
                             scans_from_peptide_val = st.session_state["selected_peptide_scans"]
                             scans_from_peptide_list = st.session_state["identifications"]["peptides_to_scannr"][scans_from_peptide_val]
+                    if "selected_scan_numbers" in st.session_state:
+                        if st.session_state["selected_scan_numbers"] is not None:
+                            if st.session_state["selected_scan_numbers"].strip() != "":
+                                selected_scans_list = get_selected_scan_numbers(st.session_state["selected_scan_numbers"])
+
                     filter_params = {"first_scan": first_scan,
                                      "last_scan": last_scan,
                                      "min_mz": min_mz,
@@ -210,6 +242,8 @@ def main(argv = None) -> None:
                                      "max_rt": max_rt,
                                      #"max_charge": max_charge,
                                      #"max_isotope": max_isotope,
+                                     "scans": selected_scans_list,
+                                     # these below are not used anymore
                                      "selected_protein": scans_from_protein_val,
                                      "scans_from_protein": list(scans_from_protein_list),
                                      "selected_peptide": scans_from_peptide_val,
