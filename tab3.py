@@ -245,9 +245,10 @@ def main(argv = None) -> None:
                                      "scans": selected_scans_list,
                                      # these below are not used anymore
                                      "selected_protein": scans_from_protein_val,
-                                     "scans_from_protein": list(scans_from_protein_list),
+                                     #"scans_from_protein": list(scans_from_protein_list),
                                      "selected_peptide": scans_from_peptide_val,
-                                     "scans_from_peptide": list(scans_from_peptide_list)}
+                                     #"scans_from_peptide": list(scans_from_peptide_list)}
+                                     }
                     with st_stdout("info"):
                         st.session_state["filtered_spectra"] = filter_spectra(st.session_state.spectrum_file,
                                                                               filter_params,
@@ -279,6 +280,12 @@ def main(argv = None) -> None:
 
     else:
         st.error("No spectra file uploaded! Please upload a file in the \"Annotation\" tab!", icon = "🚨")
+
+    if "filtered_spectra" in st.session_state:
+        filtered_spectra_header = st.subheader("Used Filter Parameters", divider = DIV_COLOR)
+        filtered_spectra_desc = st.markdown("Used filter parameters for current spectrum selection:")
+        with st.expander("Click to show all filter parameters."):
+            filtered_spectra_parameters = st.text(str(st.session_state["filtered_spectra"]["filter_params"]))
 
     if "consensus_spectrum" in st.session_state:
 
