@@ -7,6 +7,7 @@ from datetime import datetime
 
 from psm_utils import io as psm_io
 
+from typing import Tuple
 from typing import Dict
 from typing import BinaryIO
 
