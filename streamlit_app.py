@@ -99,6 +99,13 @@ def main(argv = None) -> None:
         input_header = st.subheader("Parameters", divider = DIV_COLOR)
         input_desc = st.markdown("These parameters will be used globally across the internal ions explorer.")
 
+        # mgf parsing
+        mgf_parser_pattern_desc = st.markdown("**MGF Parsing**")
+        mgf_parser_pattern = st.text_input("Regex pattern used for parsing scan numbers of spectra from the MGF file.",
+                                           key = "mgf_parser_pattern",
+                                           value = "\\.\\d+\\.",
+                                           help = "The regex pattern for parsing scan numbers of spectra from the MGF file.")
+
         # tolerance
         ttolerance_desc = st.markdown("**Tolerance**")
         ttolerance = st.number_input("Tolerance in Da:",

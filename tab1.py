@@ -43,11 +43,15 @@ def main(argv = None) -> None:
         with st.status("Reading spectra...") as spectra_reading_status:
             with st_stdout("info"):
                 if "spectra" not in st.session_state:
-                    st.session_state["spectra"] = read_spectra(spectrum_file, spectrum_file.name)
+                    st.session_state["spectra"] = read_spectra(spectrum_file,
+                                                               spectrum_file.name,
+                                                               st.session_state["mgf_parser_pattern"])
                     st.session_state["rerun_spectra_reading"] = False
                 if "spectra" in st.session_state:
                     if st.session_state["rerun_spectra_reading"]:
-                        st.session_state["spectra"] = read_spectra(spectrum_file, spectrum_file.name)
+                        st.session_state["spectra"] = read_spectra(spectrum_file,
+                                                                   spectrum_file.name,
+                                                                   st.session_state["mgf_parser_pattern"])
                         st.session_state["rerun_spectra_reading"] = False
             read_spectra_successfully = st.success("Read all spectra successfully!")
             spectra_reading_status.update(label = f"Read all spectra from file {st.session_state.spectrum_file.name} successfully!", state = "complete")
@@ -63,11 +67,15 @@ def main(argv = None) -> None:
         with st.status("Reading identifications...") as identifications_reading_status:
             with st_stdout("info"):
                 if "identifications" not in st.session_state:
-                    st.session_state["identifications"] = read_identifications(identifications_file, identifications_file.name)
+                    st.session_state["identifications"] = read_identifications(identifications_file,
+                                                                               identifications_file.name,
+                                                                               st.session_state["mgf_parser_pattern"])
                     st.session_state["rerun_identifications_reading"] = False
                 if "identifications" in st.session_state:
                     if st.session_state["rerun_identifications_reading"]:
-                        st.session_state["identifications"] = read_identifications(identifications_file, identifications_file.name)
+                        st.session_state["identifications"] = read_identifications(identifications_file,
+                                                                                   identifications_file.name,
+                                                                                   st.session_state["mgf_parser_pattern"])
                         st.session_state["rerun_identifications_reading"] = False
             read_identifications_successfully = st.success("Read all identifications successfully!")
             identifications_reading_status.update(label = f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state = "complete")
