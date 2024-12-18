@@ -15,6 +15,7 @@ import streamlit as st
 from tab1 import main as tab1_main
 from tab2 import main as tab2_main
 from tab3 import main as tab3_main
+from tab4 import main as tab4_main
 
 # import constants
 from util.constants import REPO_NAME
@@ -32,7 +33,7 @@ def main_page():
     description = st.markdown(general_description)
 
     # set tab names here
-    tab1, tab2, tab3 = st.tabs(["Data Import & Annotation", "Statistics", "Fraggraph"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Data Import & Annotation", "Statistics", "Fraggraph", "Documentation"])
 
     div = \
     """
@@ -69,6 +70,18 @@ def main_page():
 
     with tab3:
         tab3_main()
+
+    div =\
+    """
+    #####################################################
+    ##                                                 ##
+    ##                   -- TAB 3 --                   ##
+    ##                                                 ##
+    #####################################################
+    """
+
+    with tab4:
+        tab4_main()
 
 # side bar and main page loader
 def main(argv = None) -> None:
