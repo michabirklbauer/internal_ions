@@ -104,7 +104,8 @@ def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.
     """
     Returns a dictionary that maps scan numbers to spectra:
     Dict["name": name,
-         "spectra": Dict[int -> Dict["precursor"        -> float
+         "spectra": Dict[int -> Dict["spectrum"         -> pyteomics mgf spectrum
+                                     "precursor"        -> float
                                      "charge"           -> int
                                      "rt"               -> float
                                      "max_intensity"    -> float
@@ -123,6 +124,7 @@ def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.
 
             scan_nr = parse_scannr(spectrum["params"], -s, pattern)[1]
             spectrum_dict = dict()
+            spectrum_dict["spectrum"] = spectrum
             spectrum_dict["precursor"] = spectrum["params"]["pepmass"]
             spectrum_dict["charge"] = spectrum["params"]["charge"]
             spectrum_dict["rt"] = 0.0 if "rtinseconds" not in spectrum["params"] else spectrum["params"]["rtinseconds"]
