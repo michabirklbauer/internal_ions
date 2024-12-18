@@ -2,7 +2,7 @@
 # author: Micha Birklbauer
 # version: 1.2.1
 
-FROM ubuntu:23.10
+FROM ubuntu:24.04
 
 LABEL maintainer="micha.birklbauer@gmail.com"
 
@@ -28,6 +28,6 @@ RUN python3 -m venv venv && \
     . venv/bin/activate && \
     pip install --upgrade pip && \
     pip install --upgrade setuptools && \
-    pip install -r python3117.txt
+    pip install -r env.txt
 
 CMD  ["sh", "-c", ". venv/bin/activate && streamlit run streamlit_app.py"]
