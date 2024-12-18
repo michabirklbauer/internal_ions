@@ -140,7 +140,8 @@ def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.
 
     return {"name": name, "spectra": result_dict}
 
-def filter_spectra(filename: str | BinaryIO, filter_params: Dict[str, Any], name: str, pattern: str = "\\.\\d+\\.") -> Dict[str, Any]:
+# TODO this can be optimized
+def filter_spectra(spectra: Dict[int, Any], filter_params: Dict[str, Any], name: str, pattern: str = "\\.\\d+\\.") -> Dict[str, Any]:
     """
     Returns a Dict including a list of spectra from pyteomics.mgf based on the given filter criteria:
     Dict["name": name,
@@ -152,55 +153,54 @@ def filter_spectra(filename: str | BinaryIO, filter_params: Dict[str, Any], name
 
     print("Filtered spectra in total:")
 
-    with mgf.read(filename, use_index = True) as reader:
-        for s, spectrum in enumerate(reader):
+    for s, key in enumerate(spectra.keys()):
+        spectrum = spectra[key]
+        
+        if (s + 1) % 1000 == 0:
+            print(f"\t{s + 1}")
 
-            if (s + 1) % 1000 == 0:
-                print(f"\t{s + 1}")
+        scan_nr = key
 
-            scan_nr = parse_scannr(spectrum["params"], -s, pattern)[1]
+        # check spectrum > first scan
+        if "first_scan" in filter_params:
+            if scan_nr < int(filter_params["first_scan"]):
+                continue
 
-            # check spectrum > first scan
-            if "first_scan" in filter_params:
-                if scan_nr < int(filter_params["first_scan"]):
+        if "last_scan" in filter_params:
+            if scan_nr > int(filter_params["last_scan"]):
+                continue
+
+        if "min_mz" in filter_params:
+            if float(spectrum["params"]["pepmass"][0]) < float(filter_params["min_mz"]):
+                continue
+
+        if "max_mz" in filter_params:
+            if float(spectrum["params"]["pepmass"][0]) > float(filter_params["max_mz"]):
+                continue
+
+        if "min_rt" in filter_params and "rtinseconds" in spectrum["params"]:
+            if float(spectrum["params"]["rtinseconds"]) < float(filter_params["min_rt"]):
+                continue
+
+        if "max_rt" in filter_params and "rtinseconds" in spectrum["params"]:
+            if float(spectrum["params"]["rtinseconds"]) > float(filter_params["max_rt"]):
+                continue
+
+        if "max_charge" in filter_params:
+            # how to handle mutiple charges?
+            for charge in spectrum["params"]["charge"]:
+                if int(charge) > int(filter_params["max_charge"]):
                     continue
 
-            if "last_scan" in filter_params:
-                if scan_nr > int(filter_params["last_scan"]):
-                    continue
+        if "max_isotope" in filter_params:
+            pass
+            # todo implement
 
-            if "min_mz" in filter_params:
-                if float(spectrum["params"]["pepmass"][0]) < float(filter_params["min_mz"]):
-                    continue
+        if "scans" in filter_params:
+            if scan_nr not in filter_params["scans"]:
+                continue
 
-            if "max_mz" in filter_params:
-                if float(spectrum["params"]["pepmass"][0]) > float(filter_params["max_mz"]):
-                    continue
-
-            if "min_rt" in filter_params and "rtinseconds" in spectrum["params"]:
-                if float(spectrum["params"]["rtinseconds"]) < float(filter_params["min_rt"]):
-                    continue
-
-            if "max_rt" in filter_params and "rtinseconds" in spectrum["params"]:
-                if float(spectrum["params"]["rtinseconds"]) > float(filter_params["max_rt"]):
-                    continue
-
-            if "max_charge" in filter_params:
-                # how to handle mutiple charges?
-                for charge in spectrum["params"]["charge"]:
-                    if int(charge) > int(filter_params["max_charge"]):
-                        continue
-
-            if "max_isotope" in filter_params:
-                pass
-                # todo implement
-
-            if "scans" in filter_params:
-                if scan_nr not in filter_params["scans"]:
-                    continue
-
-            spectra.append(spectrum)
-        reader.close()
+        spectra.append(spectrum)
 
     print(f"\nFinished filtering {s + 1} spectra in total!")
 

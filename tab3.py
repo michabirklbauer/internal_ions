@@ -213,7 +213,7 @@ def main(argv = None) -> None:
                                    use_container_width = True)
 
         if run_filter:
-            if st.session_state.spectrum_file is not None:
+            if "spectra" in st.session_state and st.session_state["spectra"] is not None:
                 with st.status("Filtering spectra...") as filter_status:
                     scans_from_protein_val = None
                     scans_from_protein_list = [i for i in range(int(first_scan), int(last_scan) + 1)]
@@ -250,9 +250,9 @@ def main(argv = None) -> None:
                                      #"scans_from_peptide": list(scans_from_peptide_list)}
                                      }
                     with st_stdout("info"):
-                        st.session_state["filtered_spectra"] = filter_spectra(st.session_state.spectrum_file,
+                        st.session_state["filtered_spectra"] = filter_spectra(st.session_state["spectra"]["spectra"],
                                                                               filter_params,
-                                                                              st.session_state.spectrum_file.name,
+                                                                              st.session_state["spectra"]["name"],
                                                                               st.session_state["mgf_parser_pattern"])
 
                     filter_status.update(label = "Successfully finished filtering spectra.", state = "complete")
