@@ -10,14 +10,14 @@ from typing import Tuple
 from typing import BinaryIO
 
 # parse scan number from pyteomics mgf params
-def parse_scannr(params: Dict,  i: int, pattern: str = "\\.\\d+\\.") -> Tuple[int, int]:
+def parse_scannr(obj: dict | str | int,  i: int, pattern: str = "\\.\\d+\\.") -> Tuple[int, int]:
     """Parses the scan number from the params dictionary of the pyteomics mgf
     spectrum.
 
     Parameters
     ----------
-    params : Dict
-        The "params" dictionary of the pyteomics mgf spectrum.
+    object : dict, str, or int
+        The "params" dictionary of the pyteomics mgf spectrum, or a `psm_utils.spectrum_id`.
 
     i : int
         The scan number to be returned in case of failure.
@@ -32,38 +32,69 @@ def parse_scannr(params: Dict,  i: int, pattern: str = "\\.\\d+\\.") -> Tuple[in
         A tuple with the exit code (0 if successful, 1 if parsing failed) at the
         first position [0] and the scan number at the second position [1].
     """
-
-    # prefer scans attr over title attr
-    if "scans" in params:
-        try:
-            return (0, int(params["scans"]))
-        except:
-            pass
-
-    # try parse title
-    if "title" in params:
-
+    
+    # if input is already a number, assume it's a scan number
+    if type(obj) == int:
+        return obj
+    
+    # if input is a string, assume it's spectrum title or spectrum id
+    if type(obj) == str:
         # if there is a scan token in the title, try parse scan_nr
-        if "scan" in params["title"]:
+        if "scan" in obj:
             try:
-                return (0, int(params["title"].split("scan=")[1].strip("\"")))
+                return (0, int(obj.split("scan=")[1].strip("\"")))
             except:
                 pass
-
+    
         # else try to parse by pattern
         try:
-            scan_nr = re.findall(pattern, params["title"])[0]
+            scan_nr = re.findall(pattern, obj)[0]
             scan_nr = re.sub(r"[^0-9]", "", scan_nr)
             if len(scan_nr) > 0:
                 return (0, int(scan_nr))
         except:
             pass
-
+    
         # else try parse whole title
         try:
-            return (0, int(params["title"]))
+            return (0, int(float(obj)))
         except:
             pass
+
+    # if input is dictionary, assume it's mgf params
+    if type(obj) == dict:
+        params = obj
+        # prefer scans attr over title attr
+        if "scans" in params:
+            try:
+                return (0, int(params["scans"]))
+            except:
+                pass
+
+        # try parse title
+        if "title" in params:
+
+            # if there is a scan token in the title, try parse scan_nr
+            if "scan" in params["title"]:
+                try:
+                    return (0, int(params["title"].split("scan=")[1].strip("\"")))
+                except:
+                    pass
+
+            # else try to parse by pattern
+            try:
+                scan_nr = re.findall(pattern, params["title"])[0]
+                scan_nr = re.sub(r"[^0-9]", "", scan_nr)
+                if len(scan_nr) > 0:
+                    return (0, int(scan_nr))
+            except:
+                pass
+
+            # else try parse whole title
+            try:
+                return (0, int(params["title"]))
+            except:
+                pass
 
     # return unsuccessful parse
     return (1, i)

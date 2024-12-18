@@ -12,57 +12,7 @@ from typing import Tuple
 from typing import Dict
 from typing import BinaryIO
 
-# parse scan number from the psm utils spectrum id
-def parse_scannr(spectrum_id: str | int, i: int, pattern: str = "\\.\\d+\\.") -> Tuple[int, int]:
-    """Parses the scan number from the params dictionary of the pyteomics mgf
-    spectrum.
-
-    Parameters
-    ----------
-    spectrum_id : str or int
-        The spectrum id of a PSM as given by psm_utils.
-
-    i : int
-        The scan number to be returned in case of failure.
-
-    pattern : str
-        Regex pattern to use for parsing the scan number from the title if it
-        can't be infered otherwise.
-
-    Returns
-    -------
-    (exit_code, scan_nr) : Tuple
-        A tuple with the exit code (0 if successful, 1 if parsing failed) at the
-        first position [0] and the scan number at the second position [1].
-    """
-
-    if type(spectrum_id) == int:
-        return spectrum_id
-
-    # if there is a scan token in the title, try parse scan_nr
-    if "scan" in spectrum_id:
-        try:
-            return (0, int(spectrum_id.split("scan=")[1].strip("\"")))
-        except:
-            pass
-
-    # else try to parse by pattern
-    try:
-        scan_nr = re.findall(pattern, spectrum_id)[0]
-        scan_nr = re.sub(r"[^0-9]", "", scan_nr)
-        if len(scan_nr) > 0:
-            return (0, int(scan_nr))
-    except:
-        pass
-
-    # else try parse whole title
-    try:
-        return (0, int(float(spectrum_id)))
-    except:
-        pass
-
-    # return unsuccessful parse
-    return (1, i)
+from util.spectrumio import parse_scannr
 
 def read_identifications(filename: str | BinaryIO,
                          name: str,
