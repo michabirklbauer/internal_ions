@@ -141,7 +141,7 @@ def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.
     return {"name": name, "spectra": result_dict}
 
 # TODO this can be optimized
-def filter_spectra(spectra: Dict[int, Any], filter_params: Dict[str, Any], name: str, pattern: str = "\\.\\d+\\.") -> Dict[str, Any]:
+def filter_spectra(mass_spectra: Dict[int, Any], filter_params: Dict[str, Any], name: str, pattern: str = "\\.\\d+\\.") -> Dict[str, Any]:
     """
     Returns a Dict including a list of spectra from pyteomics.mgf based on the given filter criteria:
     Dict["name": name,
@@ -153,8 +153,8 @@ def filter_spectra(spectra: Dict[int, Any], filter_params: Dict[str, Any], name:
 
     print("Filtered spectra in total:")
 
-    for s, key in enumerate(spectra.keys()):
-        spectrum = spectra[key]
+    for s, key in enumerate(mass_spectra.keys()):
+        spectrum = mass_spectra[key]["spectrum"]
         
         if (s + 1) % 1000 == 0:
             print(f"\t{s + 1}")
