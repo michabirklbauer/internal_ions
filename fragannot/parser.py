@@ -271,9 +271,9 @@ class Parser:
 
         r = requests.get(url, allow_redirects=True)
         if url.find("/"):
-            file_path = ".\downloads\\" + url.rsplit("/", 1)[1]
+            file_path = ".\\downloads\\" + url.rsplit("/", 1)[1]
         else:
-            file_path = ".\downloads\\" + self.__getFilename_fromCd(r.headers.get("content-disposition"))
+            file_path = ".\\downloads\\" + self.__getFilename_fromCd(r.headers.get("content-disposition"))
 
         open(file_path, "wb").write(r.content)
         file_path = self.__uncompress(file_path)
