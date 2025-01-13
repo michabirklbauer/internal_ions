@@ -10,7 +10,7 @@ import streamlit as st
 from io import StringIO
 from threading import current_thread
 from contextlib import contextmanager
-from streamlit.runtime.scriptrunner.script_run_context import SCRIPT_RUN_CONTEXT_ATTR_NAME
+from streamlit.runtime.scriptrunner_utils.script_run_context import SCRIPT_RUN_CONTEXT_ATTR_NAME
 
 # redirect sys.stdout / sys.stderr
 @contextmanager

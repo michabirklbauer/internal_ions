@@ -309,24 +309,24 @@ def theoretical_mass_to_charge(fragment_code: str, peptidoform) -> float:
 def parse_fragment_code(fragment_code: str):
 
     # test if fragment code format is valid*
-    fragment_code_pattern = re.compile(".+(:).+(@)[0-9]+(:)[0-9]+(\()(\+|\-)[0-9](\))(\[(.*?)\])?")
+    fragment_code_pattern = re.compile(r".+(:).+(@)[0-9]+(:)[0-9]+(\()(\+|\-)[0-9](\))(\[(.*?)\])?")
     if bool(fragment_code_pattern.match(fragment_code)) == False:
         raise RuntimeError("Incorrect fragment code format: {0}".format(fragment_code))
 
     ## Parse fragment code
 
     start, end = [
-        int(i) for i in re.search("(?<=\@)(.*?)(?=\()", fragment_code).group(1).split(":")
+        int(i) for i in re.search(r"(?<=\@)(.*?)(?=\()", fragment_code).group(1).split(":")
     ]  # Get start and end amino acid indexes
     ion_cap_start, ion_cap_end = [
-        str(i) for i in re.search("^(.*?)(?=\@)", fragment_code).group(1).split(":")
+        str(i) for i in re.search(r"^(.*?)(?=\@)", fragment_code).group(1).split(":")
     ]  # Get start and end ion caps name
-    charge = int(re.search("(?<=\()(.*?)(?=\))", fragment_code).group(1))  # get charge state
-    formula = re.search("(?<=\[)(.*?)(?=\])", fragment_code)
+    charge = int(re.search(r"(?<=\()(.*?)(?=\))", fragment_code).group(1))  # get charge state
+    formula = re.search(r"(?<=\[)(.*?)(?=\])", fragment_code)
     if formula == None:
         formula = ""
     else:
-        formula = str(re.search("(?<=\[)(.*?)(?=\])", fragment_code).group(1))
+        formula = str(re.search(r"(?<=\[)(.*?)(?=\])", fragment_code).group(1))
 
     return start, end, ion_cap_start, ion_cap_end, charge, formula
 
