@@ -107,7 +107,7 @@ def fragment_annotation(
         i = 0
         still_spectra_available = True
         psms_json = []
-        print("Annotated spectra in total:")
+        print("Annotated PSMs in total:")
         while still_spectra_available:
             print(f" {i}\t")
             if i + batch_size < len(psms):
@@ -122,7 +122,7 @@ def fragment_annotation(
         p_psms = tqdm(psms) # tqdm is good for cli but bad for streamlit progress
         p_result = Parallel(n_jobs = nr_used_cores)(delayed(calculate_ions_for_psms)(psm, tolerance, fragment_types, charges, losses, deisotope) for psm in p_psms)
         psms_json = list(p_result)
-        
+
     for psm in psms_json:
         if psm["spectrum_id"] not in psms_dict:
             raise RuntimeError("Spectrum ID not found in parsed PSM dict.")
