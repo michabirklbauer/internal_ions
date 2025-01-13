@@ -15,6 +15,7 @@ import streamlit as st
 from tab1 import main as tab1_main
 from tab2 import main as tab2_main
 from tab3 import main as tab3_main
+from tab4 import main as tab4_main
 
 # import constants
 from util.constants import REPO_NAME
@@ -32,7 +33,7 @@ def main_page():
     description = st.markdown(general_description)
 
     # set tab names here
-    tab1, tab2, tab3 = st.tabs(["Annotation", "Statistics", "Fraggraph"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Data Import & Annotation", "Statistics", "Fraggraph", "Documentation"])
 
     div = \
     """
@@ -70,6 +71,18 @@ def main_page():
     with tab3:
         tab3_main()
 
+    div =\
+    """
+    #####################################################
+    ##                                                 ##
+    ##                   -- TAB 3 --                   ##
+    ##                                                 ##
+    #####################################################
+    """
+
+    with tab4:
+        tab4_main()
+
 # side bar and main page loader
 def main(argv = None) -> None:
 
@@ -98,6 +111,13 @@ def main(argv = None) -> None:
     ############################################################################
         input_header = st.subheader("Parameters", divider = DIV_COLOR)
         input_desc = st.markdown("These parameters will be used globally across the internal ions explorer.")
+
+        # mgf parsing
+        mgf_parser_pattern_desc = st.markdown("**MGF Parsing**")
+        mgf_parser_pattern = st.text_input("Regex pattern used for parsing scan numbers of spectra from the MGF file.",
+                                           key = "mgf_parser_pattern",
+                                           value = "\\.\\d+\\.",
+                                           help = "The regex pattern for parsing scan numbers of spectra from the MGF file.")
 
         # tolerance
         ttolerance_desc = st.markdown("**Tolerance**")

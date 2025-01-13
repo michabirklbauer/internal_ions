@@ -1,56 +1,23 @@
 #!/usr/bin/env python3
 
+import re
 import os
 import shutil
 import random
 from datetime import datetime
 
-from pyteomics import mzid
 from psm_utils import io as psm_io
 
+from typing import Tuple
 from typing import Dict
 from typing import BinaryIO
 
-# read identifications
-def read_mzid(filename: str | BinaryIO, name: str) -> Dict[str, Dict]:
-    """
-    Returns a dictionary that proteins/peptides to scan numbers:
-    Dict["name": str,
-         "proteins": Dict[str, Set[int]],
-         "peptides": Dict[str, Set[int]]
-    """
+from util.spectrumio import parse_scannr
 
-    proteins_to_scannr = dict()
-    peptides_to_scannr = dict()
-
-    print("Read identifications in total:")
-
-    with mzid.read(filename) as reader:
-        nr_psms = 0
-        for s in reader:
-            scan_nr = int(s["name"])
-            for psm in s["SpectrumIdentificationItem"]:
-                peptide = psm["PeptideSequence"]
-                if peptide in peptides_to_scannr:
-                    peptides_to_scannr[peptide].add(scan_nr)
-                else:
-                    peptides_to_scannr[peptide] = {scan_nr}
-                for p in psm["PeptideEvidenceRef"]:
-                    protein = p["accession"]
-                    if protein in proteins_to_scannr:
-                        proteins_to_scannr[protein].add(scan_nr)
-                    else:
-                        proteins_to_scannr[protein] = {scan_nr}
-                nr_psms += 1
-                if nr_psms % 1000 == 0:
-                    print(f"\t{nr_psms}")
-        reader.close()
-
-    print(f"\nFinished reading {nr_psms} identifications!")
-
-    return {"name": name, "proteins": proteins_to_scannr, "peptides": peptides_to_scannr}
-
-def read_other(filename: str | BinaryIO, name: str, verbose: bool = False) -> Dict[str, Dict]:
+def read_identifications(filename: str | BinaryIO,
+                         name: str,
+                         pattern: str = "\\.\\d+\\.",
+                         verbose: bool = False) -> Dict[str, Dict]:
     """
     Returns a dictionary that proteins/peptides to scan numbers:
     Dict["name": str,
@@ -82,39 +49,66 @@ def read_other(filename: str | BinaryIO, name: str, verbose: bool = False) -> Di
 
     proteins_to_scannr = dict()
     peptides_to_scannr = dict()
+    scannr_to_peptidoforms = dict()
+    peptide_to_peptidoforms = dict()
+    proteins_to_peptides = dict()
 
     print("Read identifications in total:")
 
     nr_psms = 0
     for psm in psms:
-        scan_nr = int(psm["spectrum_id"])
+        # spectrum identfier, can also be str
+        # see https://psm-utils.readthedocs.io/en/v1.2.0/api/psm_utils/#psm_utils.PSM
+        # don't know how to handle tbh
+        parsed_scan_nr = parse_scannr(psm["spectrum_id"], 0, pattern)
+        scan_nr = parsed_scan_nr[1]
+        if parsed_scan_nr[0] != 0:
+            raise RuntimeError(f"Could not parse scan nr from spectrum id {psm['spectrum_id']}.")
+        # this should return the unmodified peptide sequence
+        # according to https://psm-utils.readthedocs.io/en/v1.2.0/api/psm_utils/#psm_utils.Peptidoform
         peptide = psm.peptidoform.sequence
+        # begin parse necessary information
+        # peptides_to_scannr
         if peptide in peptides_to_scannr:
             peptides_to_scannr[peptide].add(scan_nr)
         else:
             peptides_to_scannr[peptide] = {scan_nr}
+        # proteins_to_scannr
         if psm["protein_list"] is not None:
             for protein in psm["protein_list"]:
                 if protein in proteins_to_scannr:
                     proteins_to_scannr[protein].add(scan_nr)
                 else:
                     proteins_to_scannr[protein] = {scan_nr}
+        # scannr_to_peptidoforms
+        # using psm.peptidoform.proforma
+        # see https://psm-utils.readthedocs.io/en/v1.2.0/api/psm_utils/#psm_utils.Peptidoform
+        if scan_nr in scannr_to_peptidoforms:
+            scannr_to_peptidoforms[scan_nr].add(psm.peptidoform.proforma)
+        else:
+            scannr_to_peptidoforms[scan_nr] = {psm.peptidoform.proforma}
+        # peptide_to_peptidoforms
+        if peptide in peptide_to_peptidoforms:
+            peptide_to_peptidoforms[peptide].add(psm.peptidoform.proforma)
+        else:
+            peptide_to_peptidoforms[peptide] = {psm.peptidoform.proforma}
+        # proteins_to_peptides
+        if psm["protein_list"] is not None:
+            for protein in psm["protein_list"]:
+                if protein in proteins_to_peptides:
+                    proteins_to_peptides[protein].add(peptide)
+                else:
+                    proteins_to_peptides[protein] = {peptide}
+        # end parse
         nr_psms += 1
         if nr_psms % 1000 == 0:
             print(f"\t{nr_psms}")
 
     print(f"\nFinished reading {nr_psms} identifications!")
 
-    return {"name": name, "proteins": proteins_to_scannr, "peptides": peptides_to_scannr}
-
-def read_identifications(filename: str | BinaryIO, name: str, verbose: bool = False) -> Dict[str, Dict]:
-    """
-    Returns a dictionary that proteins/peptides to scan numbers:
-    Dict["name": str,
-         "proteins": Dict[str, Set[int]],
-         "peptides": Dict[str, Set[int]]
-    """
-
-    if name.split(".")[-1].strip() == "mzid":
-        return read_mzid(filename, name)
-    return read_other(filename, name, verbose)
+    return {"name": name,
+            "proteins_to_scannr": proteins_to_scannr,
+            "peptides_to_scannr": peptides_to_scannr,
+            "scannr_to_peptidoforms": scannr_to_peptidoforms,
+            "peptide_to_peptidoforms": peptide_to_peptidoforms,
+            "proteins_to_peptides": proteins_to_peptides}

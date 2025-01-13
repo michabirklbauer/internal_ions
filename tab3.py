@@ -16,36 +16,44 @@ from util.tab3.fraggraph import main as fraggraph_main
 
 from util.constants import DIV_COLOR
 
+from typing import List
 from typing import Dict
 from typing import Any
 
 def get_minmz(selection: Dict[str, Any]) -> float:
-    if len(selection["selection"]["box"]) == 0:
+    if len(selection.selection.box) == 0:
         return 0.0
 
-    box = selection["selection"]["box"][-1]
+    box = selection.selection.box[-1]
     return min(box["y"])
 
 def get_maxmz(selection: Dict[str, Any]) -> float:
-    if len(selection["selection"]["box"]) == 0:
+    if len(selection.selection.box) == 0:
         return 10000.0
 
-    box = selection["selection"]["box"][-1]
+    box = selection.selection.box[-1]
     return max(box["y"])
 
 def get_minrt(selection: Dict[str, Any]) -> float:
-    if len(selection["selection"]["box"]) == 0:
+    if len(selection.selection.box) == 0:
         return min([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()])
 
-    box = selection["selection"]["box"][-1]
+    box = selection.selection.box[-1]
     return min(box["x"])
 
 def get_maxrt(selection: Dict[str, Any]) -> float:
-    if len(selection["selection"]["box"]) == 0:
+    if len(selection.selection.box) == 0:
         return max([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()])
 
-    box = selection["selection"]["box"][-1]
+    box = selection.selection.box[-1]
     return max(box["x"])
+
+def get_selected_scan_numbers(scan_number_str: str) -> List[int]:
+    scan_nrs = set()
+    for scan_nr in scan_number_str.split(","):
+        if scan_nr.strip() != "":
+            scan_nrs.add(int(scan_nr.strip()))
+    return list(scan_nrs)
 
 def main(argv = None) -> None:
 
@@ -142,17 +150,34 @@ def main(argv = None) -> None:
 
             with protein_col:
                 scans_from_protein = st.selectbox("Select scans from a specific protein:",
-                                                  st.session_state["identifications"]["proteins"].keys(),
+                                                  st.session_state["identifications"]["proteins_to_scannr"].keys(),
                                                   key = "selected_protein_scans",
                                                   index = None,
                                                   help = "Select a protein of interest.")
 
             with peptide_col:
                 scans_from_peptide = st.selectbox("Select scans from a specific peptide:",
-                                                  st.session_state["identifications"]["peptides"].keys(),
+                                                  st.session_state["identifications"]["peptides_to_scannr"].keys(),
                                                   key = "selected_peptide_scans",
                                                   index = None,
                                                   help = "Select a peptide of interest.")
+
+            cond1 = "selected_protein_scans" in st.session_state and st.session_state["selected_protein_scans"] is not None
+            cond2 = "selected_peptide_scans" in st.session_state and st.session_state["selected_peptide_scans"] is not None
+            if cond1 or cond2:
+                selected_scans = set()
+                if "selected_protein_scans" in st.session_state:
+                    if st.session_state["selected_protein_scans"] is not None:
+                        scans_from_protein_val = st.session_state["selected_protein_scans"]
+                        selected_scans = selected_scans.union(st.session_state["identifications"]["proteins_to_scannr"][scans_from_protein_val])
+                if "selected_peptide_scans" in st.session_state:
+                    if st.session_state["selected_peptide_scans"] is not None:
+                        scans_from_peptide_val = st.session_state["selected_peptide_scans"]
+                        selected_scans = selected_scans.union(st.session_state["identifications"]["peptides_to_scannr"][scans_from_peptide_val])
+                selected_scans_box = st.text_area("Currently selected mass spectra by means of scan numbers:",
+                                                  value = ",".join([str(s) for s in sorted(selected_scans)]),
+                                                  key = "selected_scan_numbers",
+                                                  help = "Currently selected mass spectra by means of scan numbers. Add or delete scan numbers here to modify.")
 
         else:
             st.info("No identifications file was provided! Filtering based on proteins/peptides not available unless a identifications file is uploaded in the \"Annotation\" tab!")
@@ -188,20 +213,27 @@ def main(argv = None) -> None:
                                    use_container_width = True)
 
         if run_filter:
-            if st.session_state.spectrum_file is not None:
+            if "spectra" in st.session_state and st.session_state["spectra"] is not None:
                 with st.status("Filtering spectra...") as filter_status:
                     scans_from_protein_val = None
                     scans_from_protein_list = [i for i in range(int(first_scan), int(last_scan) + 1)]
                     scans_from_peptide_val = None
                     scans_from_peptide_list = [i for i in range(int(first_scan), int(last_scan) + 1)]
+                    selected_scans_val = None
+                    selected_scans_list = [i for i in range(int(first_scan), int(last_scan) + 1)]
                     if "selected_protein_scans" in st.session_state:
                         if st.session_state["selected_protein_scans"] is not None:
                             scans_from_protein_val = st.session_state["selected_protein_scans"]
-                            scans_from_protein_list = st.session_state["identifications"]["proteins"][scans_from_protein_val]
+                            scans_from_protein_list = st.session_state["identifications"]["proteins_to_scannr"][scans_from_protein_val]
                     if "selected_peptide_scans" in st.session_state:
                         if st.session_state["selected_peptide_scans"] is not None:
                             scans_from_peptide_val = st.session_state["selected_peptide_scans"]
-                            scans_from_peptide_list = st.session_state["identifications"]["peptides"][scans_from_peptide_val]
+                            scans_from_peptide_list = st.session_state["identifications"]["peptides_to_scannr"][scans_from_peptide_val]
+                    if "selected_scan_numbers" in st.session_state:
+                        if st.session_state["selected_scan_numbers"] is not None:
+                            if st.session_state["selected_scan_numbers"].strip() != "":
+                                selected_scans_list = get_selected_scan_numbers(st.session_state["selected_scan_numbers"])
+
                     filter_params = {"first_scan": first_scan,
                                      "last_scan": last_scan,
                                      "min_mz": min_mz,
@@ -210,14 +242,18 @@ def main(argv = None) -> None:
                                      "max_rt": max_rt,
                                      #"max_charge": max_charge,
                                      #"max_isotope": max_isotope,
+                                     "scans": selected_scans_list,
+                                     # these below are not used anymore
                                      "selected_protein": scans_from_protein_val,
-                                     "scans_from_protein": list(scans_from_protein_list),
+                                     #"scans_from_protein": list(scans_from_protein_list),
                                      "selected_peptide": scans_from_peptide_val,
-                                     "scans_from_peptide": list(scans_from_peptide_list)}
+                                     #"scans_from_peptide": list(scans_from_peptide_list)}
+                                     }
                     with st_stdout("info"):
-                        st.session_state["filtered_spectra"] = filter_spectra(st.session_state.spectrum_file,
+                        st.session_state["filtered_spectra"] = filter_spectra(st.session_state["spectra"]["spectra"],
                                                                               filter_params,
-                                                                              st.session_state.spectrum_file.name)
+                                                                              st.session_state["spectra"]["name"],
+                                                                              st.session_state["mgf_parser_pattern"])
 
                     filter_status.update(label = "Successfully finished filtering spectra.", state = "complete")
             else:
@@ -245,6 +281,12 @@ def main(argv = None) -> None:
     else:
         st.error("No spectra file uploaded! Please upload a file in the \"Annotation\" tab!", icon = "🚨")
 
+    if "filtered_spectra" in st.session_state:
+        filtered_spectra_header = st.subheader("Used Filter Parameters", divider = DIV_COLOR)
+        filtered_spectra_desc = st.markdown("Used filter parameters for current spectrum selection:")
+        with st.expander("Click to show all filter parameters."):
+            filtered_spectra_parameters = st.text(str(st.session_state["filtered_spectra"]["filter_params"]))
+
     if "consensus_spectrum" in st.session_state:
 
     ############################################################################
@@ -264,17 +306,55 @@ def main(argv = None) -> None:
         fraggraph_params_header = st.subheader("Fraggraph Parameters", divider = DIV_COLOR)
         fraggraph_params_desc = st.markdown("Please specify the parameters used for running Fraggraph.")
 
-        fg_peptidoform1 = st.text_input("Specify a peptidoform to consider:",
-                                        value = "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE",
-                                        help = "Specify a peptidoform to consider for generating the fragment graph, e.g. " +
-                                               "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE.",
-                                        placeholder = "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE")
+        if "selected_peptide_scans" in st.session_state and st.session_state["selected_peptide_scans"] is not None:
+            selected_peptide = st.session_state["selected_peptide_scans"]
+            possible_selection_values = [selected_peptide] + \
+                                        [peptidoform for peptidoform in st.session_state["identifications"]["peptide_to_peptidoforms"][selected_peptide]]
+            fg_peptidoform1 = st.selectbox("Specify a peptidoform to consider:",
+                                           possible_selection_values,
+                                           index = None,
+                                           help = "Specify a peptidoform to consider for generating the fragment graph, e.g. " +
+                                                  "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE.")
 
-        fg_peptidoform2 = st.text_input("Optionally, specify a peptidoform to compare to:",
-                                        value = None,
-                                        help = "Specify a peptidoform to compare the fragment graph of the first peptidoform to, e.g. " +
-                                               "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE.",
-                                        placeholder = "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE")
+            fg_peptidoform2 = st.selectbox("Optionally, specify a peptidoform to compare to:",
+                                           possible_selection_values,
+                                           index = None,
+                                           help = "Specify a peptidoform to compare the fragment graph of the first peptidoform to, e.g. " +
+                                                  "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE.")
+        elif "selected_protein_scans" in st.session_state and st.session_state["selected_protein_scans"] is not None:
+            selected_protein = st.session_state["selected_protein_scans"]
+            possible_peptides = [peptidoform for peptidoform in st.session_state["identifications"]["proteins_to_peptides"][selected_protein]]
+            fg_selected_peptide1 = st.selectbox("Select a peptide from the selected protein:",
+                                                possible_peptides,
+                                                index = None,
+                                                help = "Select a peptide to consider for generating the fragment graph, e.g. " +
+                                                       "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE.")
+
+            if fg_selected_peptide1 is not None:
+                possible_peptidoforms = [fg_selected_peptide1] + \
+                                        [peptidoform for peptidoform in st.session_state["identifications"]["peptide_to_peptidoforms"][fg_selected_peptide1]]
+                fg_peptidoform1 = st.selectbox("Specify a peptidoform to consider:",
+                                               possible_peptidoforms,
+                                               index = None,
+                                               help = "Specify a peptidoform to consider for generating the fragment graph, e.g. " +
+                                                      "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE.")
+                fg_peptidoform2 = st.selectbox("Optionally, specify a peptidoform to compare to:",
+                                               possible_peptidoforms,
+                                               index = None,
+                                               help = "Specify a peptidoform to compare the fragment graph of the first peptidoform to, e.g. " +
+                                                      "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE.")
+        else:
+            fg_peptidoform1 = st.text_input("Specify a peptidoform to consider:",
+                                            value = None,
+                                            help = "Specify a peptidoform to consider for generating the fragment graph, e.g. " +
+                                                   "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE.",
+                                            placeholder = "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE")
+
+            fg_peptidoform2 = st.text_input("Optionally, specify a peptidoform to compare to:",
+                                            value = None,
+                                            help = "Specify a peptidoform to compare the fragment graph of the first peptidoform to, e.g. " +
+                                                   "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE.",
+                                            placeholder = "ARTKQTARKSTGGKAPRKQLATKAARKSAPAT[-79.966331]GGV[+79.966331]KKPHRYRPGTVALRE")
 
         fg_run_l, fg_run_center, fg_run_r = st.columns(3)
 
