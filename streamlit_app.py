@@ -8,6 +8,8 @@
 #####################################################
 """
 
+__version__ = "0.0.1"
+
 import pandas as pd
 import streamlit as st
 
@@ -89,7 +91,8 @@ def main(argv = None) -> None:
     about_str = \
     """
     Description text.
-    """
+    """ + \
+    f"\nThe server is running Fragment Explorer version {__version__}!"
 
     st.set_page_config(page_title = "Fragannot",
                        page_icon = ":test_tube:",
