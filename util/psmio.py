@@ -15,6 +15,7 @@ from typing import BinaryIO
 from util.spectrumio import parse_scannr
 
 def read_identifications(filename: str | BinaryIO,
+                         filetype: str,
                          name: str,
                          pattern: str = "\\.\\d+\\.",
                          verbose: bool = False) -> Dict[str, Dict]:
@@ -27,7 +28,7 @@ def read_identifications(filename: str | BinaryIO,
 
     psms = list()
     if type(filename) == str:
-        psms = psm_io.read_file(filename)
+        psms = psm_io.read_file(filename, filetype = filetype)
     else:
         tmp_dir_name = "tmp_fragannot_files_471635739"
         if os.path.exists(tmp_dir_name) and os.path.isdir(tmp_dir_name):
@@ -37,7 +38,7 @@ def read_identifications(filename: str | BinaryIO,
         with open(output_name_prefix + filename.name, "wb") as f:
             f.write(filename.getbuffer())
             f.close()
-        psms = psm_io.read_file(output_name_prefix + filename.name)
+        psms = psm_io.read_file(output_name_prefix + filename.name, filetype = filetype)
         try:
             os.remove(output_name_prefix + filename.name)
         except Exception as e:
