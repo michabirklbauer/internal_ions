@@ -17,6 +17,7 @@ from util.streamlit_utils import dataframe_to_csv_stream
 
 from util.constants import FRAGANNOT_ION_NAMES
 from util.constants import DIV_COLOR
+from util.constants import SUPPORTED_FILETYPES
 
 def reset_spectra() -> None:
     st.session_state["rerun_spectra_reading"] = True
@@ -62,18 +63,28 @@ def main(argv = None) -> None:
                                             type = None, #["mzid"],
                                             on_change = reset_identifications,
                                             help = "Upload a identification file that contains PSMs of the spectrum file in .mzid format.")
+                                            
+    identifications_file_format = st.selectbox("Select the file format of the identifications file:",
+                                               key = "identifications_file_format",
+                                               options = SUPPORTED_FILETYPES,
+                                               index = None,
+                                               on_change = reset_identifications,
+                                               placeholder = "None selected!",
+                                               help = "Select the file format of the identifications file, supported options are based on psm_utils.")
 
-    if identifications_file is not None:
+    if identifications_file is not None and identifications_file_format is not None:
         with st.status("Reading identifications...") as identifications_reading_status:
             with st_stdout("info"):
                 if "identifications" not in st.session_state:
                     st.session_state["identifications"] = read_identifications(identifications_file,
+                                                                               identifications_file_format,
                                                                                identifications_file.name,
                                                                                st.session_state["mgf_parser_pattern"])
                     st.session_state["rerun_identifications_reading"] = False
                 if "identifications" in st.session_state:
                     if st.session_state["rerun_identifications_reading"]:
                         st.session_state["identifications"] = read_identifications(identifications_file,
+                                                                                   identifications_file_format,
                                                                                    identifications_file.name,
                                                                                    st.session_state["mgf_parser_pattern"])
                         st.session_state["rerun_identifications_reading"] = False
