@@ -138,7 +138,8 @@ def main(argv = None) -> None:
                                                 st.session_state["fragannot_call_ion_selection"],
                                                 st.session_state["charges"],
                                                 st.session_state["losses"],
-                                                st.session_state.deisotope)
+                                                st.session_state.deisotope,
+                                                identifications_file_format)
                         converter = JSONConverter()
                         st.session_state["result"] = result
                         st.session_state["dataframes"] = converter.to_dataframes(data = result)
