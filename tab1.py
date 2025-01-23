@@ -63,7 +63,7 @@ def main(argv = None) -> None:
                                             type = None, #["mzid"],
                                             on_change = reset_identifications,
                                             help = "Upload a identification file that contains PSMs of the spectrum file in .mzid format.")
-                                            
+
     identifications_file_format = st.selectbox("Select the file format of the identifications file:",
                                                key = "identifications_file_format",
                                                options = SUPPORTED_FILETYPES,
@@ -119,7 +119,10 @@ def main(argv = None) -> None:
                                  use_container_width = True)
 
     if run_analysis:
-        if st.session_state.spectrum_file is not None and st.session_state.identifications_file is not None:
+        cond1 = st.session_state.spectrum_file is not None
+        cond2 = st.session_state.identifications_file is not None
+        cond3 = st.session_state.identifications_file_format is not None
+        if cond1 and cond2 and cond3:
             run_info_title = st.markdown("**Parameters:**")
             run_info_str = f"\tSpectrum file name: {st.session_state.spectrum_file.name}\n" + \
                            f"\tIdentifications file name: {st.session_state.identifications_file.name}\n" + \
@@ -138,7 +141,8 @@ def main(argv = None) -> None:
                                                 st.session_state["fragannot_call_ion_selection"],
                                                 st.session_state["charges"],
                                                 st.session_state["losses"],
-                                                st.session_state.deisotope)
+                                                st.session_state.deisotope,
+                                                st.session_state.identifications_file_format)
                         converter = JSONConverter()
                         st.session_state["result"] = result
                         st.session_state["dataframes"] = converter.to_dataframes(data = result)
@@ -156,7 +160,7 @@ def main(argv = None) -> None:
             else:
                 res_status_1 = st.error("Fragannot stopped prematurely! See log for more information!")
         else:
-            res_status_1 = st.error("You need to specify a spectrum AND identifications file!")
+            res_status_1 = st.error("You need to specify a spectrum AND identifications file AND the file format!")
 
     ############################################################################
     if "dataframes" in st.session_state:
