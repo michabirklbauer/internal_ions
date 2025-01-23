@@ -29,6 +29,7 @@ STANDARD_SEARCHENGINE_SCORES = [
     "Andromeda:score",
     "Byonic:Score",
     "Comet:Xcorr",
+    "Comet:xcorr",
     "DeBunker:score",
     "IdentityE Score",
     "KSDP score",
