@@ -40,11 +40,12 @@ class FragannotNumba:
         losses: List[str],
         file_format: str,
         deisotope: bool,
+        parser_pattern: str,
         write_file: bool = True) -> List[Dict[str, Any]]:
 
         return fragment_annotation(ident_file, spectra_file, tolerance,
                                    fragment_types, charges, losses, file_format,
-                                   deisotope, write_file, self.nr_used_cores)
+                                   deisotope, parser_pattern, write_file, self.nr_used_cores)
 
 # set micro batching and batch params here
 def fragment_annotation(
@@ -56,6 +57,7 @@ def fragment_annotation(
     losses: List[str],
     file_format: str,
     deisotope: bool,
+    parser_pattern: str,
     write_file: bool = True,
     nr_used_cores: int = 1,
     micro_batch: bool = True,
@@ -87,7 +89,7 @@ def fragment_annotation(
 
     print("Fragannot running using " + str(nr_used_cores) + " logical cores.\n")
 
-    P = Parser(is_streamlit = True)
+    P = Parser(parser_pattern = parser_pattern, is_streamlit = True)
 
     all_psms = P.read(spectra_file, ident_file, file_format = file_format)
     # construct list of psms with only one psm per spectrum

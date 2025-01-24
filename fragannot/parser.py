@@ -64,12 +64,13 @@ STANDARD_SEARCHENGINE_SCORES = [
 
 
 class Parser:
-    def __init__(self, is_streamlit: bool = False):
+    def __init__(self, parser_pattern: str, is_streamlit: bool = False):
         # Set up logging
         self.logger = logging.getLogger(__name__)
         self.spectra = None
         self.psm_list = None
         self.is_streamlit = is_streamlit
+        self.parser_pattern = parser_pattern
 
     def read(self, raw_file, ident_file, file_format, max_rank=RANK_LIMIT):
         """Read and process raw file and identification file.
@@ -148,7 +149,7 @@ class Parser:
         file_path : str
             Path to the raw file
         """
-        return SpectrumFile(file_path)
+        return SpectrumFile(file_path, self.parser_pattern)
 
     def __read_id_file(self, file_path, file_format):
         """Read identification file more generously then psm_utils
