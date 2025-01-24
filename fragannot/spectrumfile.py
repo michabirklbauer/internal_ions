@@ -16,7 +16,7 @@ class SpectrumFile:
         self.file_format = None
         self._build_index = None
         self.get_by_id = None
-        self.parser_pattern = pattern
+        self.parser_pattern = parser_pattern
 
         self._load(file_path)
         self._build_index()
