@@ -4,14 +4,19 @@ from pyteomics import mzml, mgf
 from os.path import splitext
 from collections import defaultdict
 
+import sys
+sys.path.append("..")
+from util.spectrumio import parse_scannr
+
 class SpectrumFile:
-    def __init__(self, file_path):
+    def __init__(self, file_path, parser_pattern = r'index(?:\s+)?=(?:\s+)?(\d+)'):
         self.logger = logging.getLogger(__name__)
         self.indices = defaultdict(dict)
         self.spectra_source = None
         self.file_format = None
         self._build_index = None
         self.get_by_id = None
+        self.parser_pattern = pattern
 
         self._load(file_path)
         self._build_index()
@@ -61,6 +66,10 @@ class SpectrumFile:
                 return self.spectra_source.get_by_id(id_string)
             except KeyError:
                 #trying to recover
+                scan_nr = parse_scannr(id_string, -1, self.parser_pattern)
+                if scan_nr[0] == 0:
+                    return self.spectra_source.get_by_index(self.indices['scan'][scan_nr[1]])
+
                 match_index = re.match(r'index(?:\s+)?=(?:\s+)?(\d+)', id_string)
 
                 if not match_index is None:
@@ -90,6 +99,10 @@ class SpectrumFile:
                 return self.spectra_source.get_by_id(id_string)
             except KeyError:
                 #trying to recover
+                scan_nr = parse_scannr(id_string, -1, self.parser_pattern)
+                if scan_nr[0] == 0:
+                    return self.spectra_source.get_by_index(self.indices['scan'][scan_nr[1]])
+
                 match_index = re.match(r'index(?:\s+)?=(?:\s+)?(\d+)', id_string)
 
                 if not match_index is None:

@@ -142,6 +142,7 @@ def main(argv = None) -> None:
                                                 st.session_state["charges"],
                                                 st.session_state["losses"],
                                                 st.session_state.deisotope,
+                                                st.session_state["mgf_parser_pattern"],
                                                 st.session_state.identifications_file_format)
 
                         converter = JSONConverter()
