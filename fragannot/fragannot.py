@@ -20,6 +20,7 @@ from ._version import __version__
 from . import constant
 from .parser import Parser as Parser
 
+## ------------------ UNSUPPORTED ---------------------
 
 class Fragannot:
     def __init__(self):
