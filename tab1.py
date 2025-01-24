@@ -94,7 +94,7 @@ def main(argv = None) -> None:
     st.session_state["fragannot_call_ion_selection"] = st.session_state["selected_ions_nterm"] + st.session_state["selected_ions_cterm"]
 
     charges_str = st.text_input("Charges to consider [comma delimited]:",
-                                value = "-1, +1",
+                                value = "+1",
                                 help = "The charges to consider for fragment ions. Multiple entries should be delimited by commas!")
     st.session_state["charges"] = [charge.strip() for charge in charges_str.split(",")]
 
@@ -143,6 +143,7 @@ def main(argv = None) -> None:
                                                 st.session_state["losses"],
                                                 st.session_state.deisotope,
                                                 st.session_state.identifications_file_format)
+
                         converter = JSONConverter()
                         st.session_state["result"] = result
                         st.session_state["dataframes"] = converter.to_dataframes(data = result)

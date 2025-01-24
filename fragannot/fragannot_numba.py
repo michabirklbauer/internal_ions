@@ -151,7 +151,12 @@ def calculate_ions_for_psms(psm,
                             deisotope: bool) -> Dict[str, Any]:
 
     if charges == "auto":  # if charges to consider not specified: use precursor charge as max charge
-        charges_used = range(1, abs(psm.get_precursor_charge()), 1)
+        pc = psm.get_precursor_charge()
+        if pc > 0:
+            charges_used = range(1, psm.get_precursor_charge() + 1)
+        else:
+            charges_used = range(psm.get_precursor_charge(), 0)
+
     else:
         charges_used = charges
 
@@ -208,7 +213,7 @@ def deisotope_peak_list(mzs: List[float], intensities: List[float]) -> List[List
 def compute_theoretical_fragments(
     sequence_length: int,
     fragment_types: List[str],
-    charges: List[int] = [-1],
+    charges: List[int] = [1],
     neutral_losses: List[str] = [],
     internal: bool = True) -> List[str]:
 
