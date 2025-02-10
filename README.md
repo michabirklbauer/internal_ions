@@ -2,10 +2,9 @@
 
 ## Setup
 
-- Requirements: **This only runs on python 3.11 or lower!**
-- Recommended: python 3.11.7
+- Requirements: **python 3.11+!**
 - Packages: `pip install -r requirements.txt`
-- Packages (alternative, exact version numbers): `pip install -r python3117.txt`
+- Packages (alternative, exact version numbers): `pip install -r env.txt`
 
 ## Development Notes
 
@@ -27,4 +26,10 @@
 
 ## Running the App via Docker
 
-- Running this app via Docker is possible with `docker run -p 8501:8501 michabirklbauer/internalionexplorer:latest`
+- Running this app via Docker is possible with:
+  - `docker build . -f Dockerfile -t internalions`
+  - `docker run -p 8501:8501 internalions`
+
+## Server
+
+- [Online](https://computproteomics.bmb.sdu.dk/app_direct/internal_ions/)
