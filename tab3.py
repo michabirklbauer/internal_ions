@@ -215,6 +215,7 @@ def main(argv=None) -> None:
                                    use_container_width=True)
 
         if run_filter:
+            selected_scans_list = [i for i in range(int(first_scan), int(last_scan) + 1)]
             if "spectra" in st.session_state and st.session_state["spectra"] is not None:
                 with st.status("Filtering spectra...") as filter_status:
                     if "selected_scan_numbers" in st.session_state:
