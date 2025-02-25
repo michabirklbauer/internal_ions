@@ -17,6 +17,7 @@ def fragannot_call(spectrum_file: BinaryIO,
                    charges: List[str],
                    losses: List[str],
                    deisotope: bool,
+                   parser_pattern: str,
                    file_format: str = "infer",
                    verbose: bool = False) -> Dict:
 
@@ -46,6 +47,7 @@ def fragannot_call(spectrum_file: BinaryIO,
                                               losses,
                                               file_format,
                                               deisotope,
+                                              parser_pattern,
                                               write_file = False)
 
     # remove written files
