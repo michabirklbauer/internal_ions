@@ -140,13 +140,13 @@ def main(argv=None) -> None:
 
                         converter = JSONConverter()
                         st.session_state["result"] = result
-                        st.session_state["dataframes"] = converter.to_dataframes(data = result)
+                        st.session_state["dataframes"] = converter.to_dataframes(data=result)
                         st.session_state["dataframes_source"] = {"spectrum_file": st.session_state.spectrum_file.name,
                                                                  "identifications_file": st.session_state.identifications_file.name,
                                                                  "fragment_centric_csv": None,
                                                                  "spectrum_centric_csv": None}
                         status_1 = 0
-                        st_status.update(label = "Fragannot finished successfully!", state = "complete")
+                        st_status.update(label="Fragannot finished successfully!", state="complete")
                     except Exception as e:
                         st.exception(e)
                         status_1 = 1

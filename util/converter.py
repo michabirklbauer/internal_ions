@@ -12,6 +12,7 @@ from typing import BinaryIO
 __version = "1.0.0"
 __date = "2023-02-07"
 
+
 class JSONConverter:
     """
     Convert JSON files to different (file) formats.
@@ -51,7 +52,7 @@ class JSONConverter:
         Load JSON from file.
         """
 
-        with open(json_file, "r", encoding = "utf-8") as f:
+        with open(json_file, "r", encoding="utf-8") as f:
             self.data = json.load(f)
             f.close()
 
@@ -71,12 +72,12 @@ class JSONConverter:
         Export JSON to CSV format.
         """
 
-        if data == None:
+        if data is None:
             data = self.data
 
         dataframes = self.to_dataframes(data)
-        dataframes[0].to_csv(prefix + "_fragment.csv", index = False)
-        dataframes[1].to_csv(prefix + "_spectrum.csv", index = False)
+        dataframes[0].to_csv(prefix + "_fragment.csv", index=False)
+        dataframes[1].to_csv(prefix + "_spectrum.csv", index=False)
 
         return dataframes
 
@@ -85,7 +86,7 @@ class JSONConverter:
         Export JSON to EXCEL format.
         """
 
-        if data == None:
+        if data is None:
             data = self.data
 
         dataframes = self.to_dataframes(data)
@@ -99,7 +100,7 @@ class JSONConverter:
         Re-format JSON to dataframes.
         """
 
-        if data == None:
+        if data is None:
             data = self.data
 
         # fragment-centric dataframe structure
@@ -144,7 +145,6 @@ class JSONConverter:
         for key in data.keys():
             entry = data[key]
             pep_seq = entry["sequence"]
-            pep_len = len(pep_seq)
 
             # Fragment-centric
             for i, code in enumerate(entry["annotation"]["theoretical_code"]):
@@ -198,7 +198,7 @@ class JSONConverter:
             spectrum["total_int_internal"].append(percentages_and_total_intensities["total_int_internal"])
             spectrum["total_int_terminal"].append(percentages_and_total_intensities["total_int_terminal"])
             spectrum["total_int_other"].append(percentages_and_total_intensities["total_int_non"])
-            top_3 = self.__find_top3_most_intense_internal_ions(entry["annotation"]["theoretical_code"],entry["annotation"]["intensity"], pep_seq)
+            top_3 = self.__find_top3_most_intense_internal_ions(entry["annotation"]["theoretical_code"], entry["annotation"]["intensity"], pep_seq)
             spectrum["top1_internal_ion_code"].append(top_3[0][0])
             spectrum["top1_internal_seq"].append(top_3[1][0])
             spectrum["top2_internal_ion_code"].append(top_3[0][1])
@@ -286,7 +286,7 @@ class JSONConverter:
             if fragments[i] is not None and "t" not in fragments[i]:
                 mapping[intensity] = fragments[i]
 
-        top_3_intensities = sorted(list(mapping.keys()), reverse = True)[:3]
+        top_3_intensities = sorted(list(mapping.keys()), reverse=True)[:3]
         top_3_codes = [mapping[intensity] for intensity in top_3_intensities]
 
         top_3_sequences = []
@@ -325,7 +325,7 @@ class JSONConverter:
         total_int_terminal = 0
         total_int_non = 0
 
-        for i,fragment in enumerate(fragments):
+        for i, fragment in enumerate(fragments):
             if fragment is not None:
                 if "t" in fragment:
                     terminal += 1
@@ -398,7 +398,7 @@ class JSONConverter:
 
         # test if fragment code format is valid*
         fragment_code_pattern = re.compile(r".+(:).+(@)[0-9]+(:)[0-9]+(\()(\+|\-)[0-9](\))(\[(.*?)\])?")
-        if bool(fragment_code_pattern.match(fragment_code)) == False:
+        if not bool(fragment_code_pattern.match(fragment_code)):
             raise RuntimeError("Incorrect fragment code format: {0}".format(fragment_code))
 
         # Parse fragment code
@@ -412,7 +412,7 @@ class JSONConverter:
         # Get start and end ion caps name
         charge = int(re.search(r"(?<=\()(.*?)(?=\))", fragment_code).group(1))  # get charge state
         formula = re.search(r"(?<=\[)(.*?)(?=\])", fragment_code)
-        if formula == None:
+        if formula is None:
             formula = ""
         else:
             formula = str(re.search(r"(?<=\[)(.*?)(?=\])", fragment_code).group(1))

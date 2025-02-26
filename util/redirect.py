@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # STREAMLIT REDIRECT STD OUT / STD ERR
 # 2021 (c) Micha Johannes Birklbauer
 # https://github.com/michabirklbauer/
@@ -11,6 +9,7 @@ from io import StringIO
 from threading import current_thread
 from contextlib import contextmanager
 from streamlit.runtime.scriptrunner_utils.script_run_context import SCRIPT_RUN_CONTEXT_ATTR_NAME
+
 
 # redirect sys.stdout / sys.stderr
 @contextmanager
@@ -34,11 +33,13 @@ def st_redirect(src, dst):
         finally:
             src.write = old_write
 
+
 # write sys.stdout to streamlit dst
 @contextmanager
 def st_stdout(dst):
     with st_redirect(sys.stdout, dst):
         yield
+
 
 # write sys.stderr to streamlit dst
 @contextmanager
