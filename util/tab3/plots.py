@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
+
 def plot_spectrum(intensity_values, mz_values) -> go.Figure:
     fig = go.Figure()
 
@@ -16,6 +17,7 @@ def plot_spectrum(intensity_values, mz_values) -> go.Figure:
         trace.showlegend = False
 
     return fig
+
 
 def plot_consensus_spectrum(intensity_values, mz_values, coverage) -> go.Figure:
     fig = go.Figure()
@@ -32,6 +34,7 @@ def plot_consensus_spectrum(intensity_values, mz_values, coverage) -> go.Figure:
 
     return fig
 
+
 def plot_spectra_chromatogram(spectra: dict) -> pd.DataFrame:
     """
     Returns a DataFrame with the following columns:
@@ -40,7 +43,7 @@ def plot_spectra_chromatogram(spectra: dict) -> pd.DataFrame:
 
     fig = go.Figure()
 
-    #get the min and max intensity
+    # get the min and max intensity
     intensity_array = [spectrum["precursor"][1] for spectrum in spectra.values() if spectrum["precursor"][1]]
 
     # if no values, return empty figure
@@ -81,7 +84,8 @@ def plot_spectra_chromatogram(spectra: dict) -> pd.DataFrame:
 
     return fig
 
-#fragment coverage matrix plotly
+
+# fragment coverage matrix plotly
 def draw_fragment_coverage_matrix_plotly(
     FG, x="intensity", x_min=1, x_max=10, filename=None, peptidoform_index=0
 ):
@@ -138,19 +142,20 @@ def draw_fragment_coverage_matrix_plotly(
 
     # Update layout
     fig.update_layout(
-        xaxis_title = "End Position (AA index)",
-        yaxis_title = "Start Position (AA index)",
-        height = 500,
-        width = 500,
-        title = "Fragment Coverage Matrix",
+        xaxis_title="End Position (AA index)",
+        yaxis_title="Start Position (AA index)",
+        height=500,
+        width=500,
+        title="Fragment Coverage Matrix",
     )
 
-    #return plot:
+    # return plot:
     fig['layout']['xaxis']['autorange'] = "reversed"
 
     return fig
 
-#fragment coverage matrix difference plotly
+
+# fragment coverage matrix difference plotly
 def draw_fragment_coverage_matrix_difference_plotly(
     FG,
     peptidoform_index_1=0,
@@ -214,7 +219,7 @@ def draw_fragment_coverage_matrix_difference_plotly(
 
     # Create plotly figure
 
-    #print head of frag_df
+    # print head of frag_df
     fig = go.Figure(
         data=go.Heatmap(
             z=frag_df["FC"],
@@ -240,11 +245,12 @@ def draw_fragment_coverage_matrix_difference_plotly(
 
     return fig
 
+
 # define the function draw_barplor_intensity_SDI, this function take a fragment graph object and a list of position ranges,
-#if the position range is not provided, the function will plot the intensity of site determining ions automatically
+# if the position range is not provided, the function will plot the intensity of site determining ions automatically
 # for the peptidoform of peptidoform_index.
-#the site determine ions are ions of the sae position but whose mass are different across the peptidoforms
-def draw_barplot_intensity_SDI(FG, position_range = None):
+# the site determine ions are ions of the sae position but whose mass are different across the peptidoforms
+def draw_barplot_intensity_SDI(FG, position_range=None):
     """
     This function draws a barplot of the intensity of site determining ions (SDI) for a given Fragment Graph object.
 
@@ -262,11 +268,11 @@ def draw_barplot_intensity_SDI(FG, position_range = None):
     if position_range is None:
         frag_df = frag_df.drop_duplicates(subset=["start_pos", "end_pos", "mz"], keep=False)
     else:
-        #use the position ranges to filter the fragment table
-        #TODO check that this is correct
+        # use the position ranges to filter the fragment table
+        # TODO check that this is correct
         frag_df = frag_df[(frag_df["start_pos"] >= position_range[0]) & (frag_df["end_pos"] <= position_range[1])]
 
-    #boxplot intensiyt in fucntion of peptidoform index
+    # boxplot intensiyt in fucntion of peptidoform index
     fig = go.Figure(
         data=[
             go.Box(
@@ -289,7 +295,7 @@ def draw_barplot_intensity_SDI(FG, position_range = None):
 
 
 # create a jitter plot of the intensity of the site determining ions for each peptidoform and connect the points with a line if it is the same position
-def draw_jitterplot_intensity_SDI(FG, position_range = None):
+def draw_jitterplot_intensity_SDI(FG, position_range=None):
     """
     This function draws a jitter plot of the intensity of site determining ions (SDI) for a given Fragment Graph object.
 
@@ -307,27 +313,17 @@ def draw_jitterplot_intensity_SDI(FG, position_range = None):
     if position_range is None:
         frag_df = frag_df.drop_duplicates(subset=["start_pos", "end_pos", "mz"], keep=False)
     else:
-        #use the position ranges to filter the fragment table
-        #TODO check that this is correct
+        # use the position ranges to filter the fragment table
+        # TODO check that this is correct
         frag_df = frag_df[(frag_df["start_pos"] >= position_range[0]) & (frag_df["end_pos"] <= position_range[1])]
 
-    #create a jitter plot of the intensity of the site determining ions for each peptidoform and connect the points with a line if it is the same position
+    # create a jitter plot of the intensity of the site determining ions for each peptidoform and connect the points with a line if it is the same position
     fig = go.Figure()
 
     for i in range(len(frag_df)):
-        fig.add_trace(go.Scatter
-
-                        (x = frag_df["peptidoform_index"],
-                         y = frag_df["intensity"],
-                         mode = "lines+markers",
-                         name = "Intensity",
-                         marker_color = "blue"))
+        fig.add_trace(go.Scatter(x=frag_df["peptidoform_index"], y=frag_df["intensity"], mode="lines+markers", name="Intensity", marker_color="blue"))
 
     # Update layout
-    fig.update_layout(
-        xaxis_title="Peptidoform Index",
-        yaxis_title="Intensity",
-        title="Jitterplot of Intensity SDI",
-    )
+    fig.update_layout(xaxis_title="Peptidoform Index", yaxis_title="Intensity", title="Jitterplot of Intensity SDI")
 
     return fig

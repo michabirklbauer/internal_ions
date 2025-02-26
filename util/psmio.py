@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-
-import re
 import os
 import shutil
 import random
@@ -8,11 +5,11 @@ from datetime import datetime
 
 from psm_utils import io as psm_io
 
-from typing import Tuple
 from typing import Dict
 from typing import BinaryIO
 
 from util.spectrumio import parse_scannr
+
 
 def read_identifications(filename: str | BinaryIO,
                          filetype: str,
@@ -27,8 +24,8 @@ def read_identifications(filename: str | BinaryIO,
     """
 
     psms = list()
-    if type(filename) == str:
-        psms = psm_io.read_file(filename, filetype = filetype)
+    if isinstance(filename, str):
+        psms = psm_io.read_file(filename, filetype=filetype)
     else:
         tmp_dir_name = "tmp_fragannot_files_471635739"
         if os.path.exists(tmp_dir_name) and os.path.isdir(tmp_dir_name):
@@ -41,7 +38,7 @@ def read_identifications(filename: str | BinaryIO,
         psms = psm_io.read_file(output_name_prefix + filename.name, filetype = filetype)
         try:
             os.remove(output_name_prefix + filename.name)
-        except Exception as e:
+        except Exception:
             if verbose:
                 print("Could not remove file: " + output_name_prefix + filename.name)
     if len(psms) == 0:

@@ -1,13 +1,7 @@
-#!/usr/bin/env python3
-
 import re
 from pyteomics import mgf
+from typing import Any, Dict, Tuple, BinaryIO
 
-from typing import Any
-from typing import List
-from typing import Dict
-from typing import Tuple
-from typing import BinaryIO
 
 # parse scan number from pyteomics mgf params
 def parse_scannr(obj: dict | str | int,  i: int, pattern: str = "\\.\\d+\\.") -> Tuple[int, int]:
@@ -34,16 +28,16 @@ def parse_scannr(obj: dict | str | int,  i: int, pattern: str = "\\.\\d+\\.") ->
     """
     
     # if input is already a number, assume it's a scan number
-    if type(obj) == int:
+    if isinstance(obj, int):
         return obj
     
     # if input is a string, assume it's spectrum title or spectrum id
-    if type(obj) == str:
+    if isinstance(obj, str):
         # if there is a scan token in the title, try parse scan_nr
         if "scan" in obj:
             try:
                 return (0, int(obj.split("scan=")[1].strip("\"")))
-            except:
+            except Exception:
                 pass
     
         # else try to parse by pattern
@@ -52,23 +46,23 @@ def parse_scannr(obj: dict | str | int,  i: int, pattern: str = "\\.\\d+\\.") ->
             scan_nr = re.sub(r"[^0-9]", "", scan_nr)
             if len(scan_nr) > 0:
                 return (0, int(scan_nr))
-        except:
+        except IndexError:
             pass
     
         # else try parse whole title
         try:
             return (0, int(float(obj)))
-        except:
+        except ValueError:
             pass
 
     # if input is dictionary, assume it's mgf params
-    if type(obj) == dict:
+    if isinstance(obj, dict):
         params = obj
         # prefer scans attr over title attr
         if "scans" in params:
             try:
                 return (0, int(params["scans"]))
-            except:
+            except ValueError:
                 pass
 
         # try parse title
@@ -78,7 +72,7 @@ def parse_scannr(obj: dict | str | int,  i: int, pattern: str = "\\.\\d+\\.") ->
             if "scan" in params["title"]:
                 try:
                     return (0, int(params["title"].split("scan=")[1].strip("\"")))
-                except:
+                except (IndexError, ValueError):
                     pass
 
             # else try to parse by pattern
@@ -87,17 +81,18 @@ def parse_scannr(obj: dict | str | int,  i: int, pattern: str = "\\.\\d+\\.") ->
                 scan_nr = re.sub(r"[^0-9]", "", scan_nr)
                 if len(scan_nr) > 0:
                     return (0, int(scan_nr))
-            except:
+            except IndexError:
                 pass
 
             # else try parse whole title
             try:
                 return (0, int(params["title"]))
-            except:
+            except ValueError:
                 pass
 
     # return unsuccessful parse
     return (1, i)
+
 
 # reading spectra
 def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.") -> Dict[int, Dict]:
@@ -116,7 +111,7 @@ def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.
 
     print("Read spectra in total:")
 
-    with mgf.read(filename, use_index = True) as reader:
+    with mgf.read(filename, use_index=True) as reader:
         for s, spectrum in enumerate(reader):
 
             if (s + 1) % 1000 == 0:
@@ -139,6 +134,7 @@ def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.
     print(f"\nFinished reading {s + 1} spectra!")
 
     return {"name": name, "spectra": result_dict}
+
 
 # TODO this can be optimized
 def filter_spectra(mass_spectra: Dict[int, Any], filter_params: Dict[str, Any], name: str, pattern: str = "\\.\\d+\\.") -> Dict[str, Any]:
