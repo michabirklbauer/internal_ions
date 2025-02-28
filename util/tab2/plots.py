@@ -75,47 +75,21 @@ per_spec_ion_type = spectrum_hist_plotter("perc_", "Percentage")
 per_spec_ion_intens = spectrum_hist_plotter("total_int_", "Intensity Percentage")
 
 
-# currently not used
-def log_ion_intens_ridge(fragments_dataframe: pd.DataFrame) -> go.Figure:
+def violin_plotter(colname, xaxis_title, transform: Callable = lambda x: x):
+    def func(fragments_dataframe: pd.DataFrame) -> go.Figure:
+        types = fragments_dataframe["frag_types"].unique()
 
-    types = fragments_dataframe["frag_types"].unique()
+        fig = go.Figure()
+        for t in types:
+            fig.add_trace(go.Violin(x=transform(fragments_dataframe.loc[fragments_dataframe.frag_types == t, colname]), name=t))
 
-    fig = go.Figure()
-    for t in types:
-        fig.add_trace(go.Violin(x=np.log(fragments_dataframe[fragments_dataframe.frag_types == t].frag_intensity), name=t))
-
-    fig.update_traces(orientation="h", side="positive", width=3, points=False)
-    fig.update_layout(barmode="group", xaxis_title="Log2(Intensity)", yaxis_title="Probability", margin=DEFAULT_MARGIN)
-    return fig
-
-
-def rel_ion_intens_ridge(fragments_dataframe: pd.DataFrame) -> go.Figure:
-
-    types = fragments_dataframe["frag_types"].unique()
-
-    fig = go.Figure()
-    for t in types:
-        fig.add_trace(go.Violin(x=fragments_dataframe[fragments_dataframe.frag_types == t].perc_of_total_intensity, name=t))
-
-    fig.update_traces(orientation="h", side="positive", width=3, points=False)
-    fig.update_layout(barmode="group", xaxis_title="Intensity", yaxis_title="Probability", margin=DEFAULT_MARGIN)
-
-    return fig
+        fig.update_traces(orientation="h", side="positive", width=3, points=False)
+        fig.update_layout(barmode="group", xaxis_title=xaxis_title, yaxis_title="Probability", margin=DEFAULT_MARGIN)
+        return fig
+    return func
 
 
-# currently not used
-def rel_ion_intens_prop_ridge(fragments_dataframe: pd.DataFrame) -> go.Figure:
-
-    types = fragments_dataframe["frag_types"].unique()
-
-    fig = go.Figure()
-    for t in types:
-        fig.add_trace(go.Violin(x=fragments_dataframe[fragments_dataframe.frag_types == t].prop_intensity_to_base_peak, name=t))
-
-    fig.update_traces(orientation="h", side="positive", width=3, points=False)
-    fig.update_layout(barmode="group", xaxis_title="Intensity", yaxis_title="Probability", margin=DEFAULT_MARGIN)
-
-    return fig
+rel_ion_intens_ridge = violin_plotter("perc_of_total_intensity", "Intensity")
 
 
 def logo_of_fraction(spectra_dataframe: pd.DataFrame,
