@@ -46,7 +46,7 @@ def fragannot_call(spectrum_file: BinaryIO,
                                               file_format,
                                               deisotope,
                                               parser_pattern,
-                                              write_file = False)
+                                              write_file=False)
 
     # remove written files
     try:

@@ -8,8 +8,9 @@ import sys
 sys.path.append("..")
 from util.spectrumio import parse_scannr
 
+
 class SpectrumFile:
-    def __init__(self, file_path, parser_pattern = r'index(?:\s+)?=(?:\s+)?(\d+)'):
+    def __init__(self, file_path, parser_pattern=r'index(?:\s+)?=(?:\s+)?(\d+)'):
         self.logger = logging.getLogger(__name__)
         self.indices = defaultdict(dict)
         self.spectra_source = None
@@ -26,7 +27,7 @@ class SpectrumFile:
             return False
         try:
             int(var)
-        except:
+        except ValueError:
             return False
         return True
 
@@ -59,20 +60,20 @@ class SpectrumFile:
                 id_string = int(id_string)
             return self.spectra_source.get_by_index(self.indices['scan'][id_string])
         elif type(id_string) is str:
-            #in case of whitespaces
+            # in case of whitespaces
             id_string = id_string.strip()
             try:
-                #the default way
+                # the default way
                 return self.spectra_source.get_by_id(id_string)
             except KeyError:
-                #trying to recover
+                # trying to recover
                 scan_nr = parse_scannr(id_string, -1, self.parser_pattern)
                 if scan_nr[0] == 0:
                     return self.spectra_source.get_by_index(self.indices['scan'][scan_nr[1]])
 
                 match_index = re.match(r'index(?:\s+)?=(?:\s+)?(\d+)', id_string)
 
-                if not match_index is None:
+                if match_index is not None:
                     return self.spectra_source.get_by_index(int(match_index.group(1)))
 
                 if id_string in self.indices['title'].keys():
@@ -92,24 +93,24 @@ class SpectrumFile:
                 id_string = int(id_string)
             return self.spectra_source.get_by_index(self.indices['scan'][id_string])
         elif type(id_string) is str:
-            #in case of whitespaces
+            # in case of whitespaces
             id_string = id_string.strip()
             try:
-                #the default way
+                # the default way
                 return self.spectra_source.get_by_id(id_string)
             except KeyError:
-                #trying to recover
+                # trying to recover
                 scan_nr = parse_scannr(id_string, -1, self.parser_pattern)
                 if scan_nr[0] == 0:
                     return self.spectra_source.get_by_index(self.indices['scan'][scan_nr[1]])
 
                 match_index = re.match(r'index(?:\s+)?=(?:\s+)?(\d+)', id_string)
 
-                if not match_index is None:
+                if match_index is not None:
                     return self.spectra_source.get_by_index(int(match_index.group(1)))
 
-                #if id_string in self.indices['title'].keys():
-                #    return self.spectra_source.get_by_index(self.indices['title'][id_string])
+                # if id_string in self.indices['title'].keys():
+                #     return self.spectra_source.get_by_index(self.indices['title'][id_string])
 
                 if type(id_string) is int or id_string.isdigit():
                     return self.spectra_source.get_by_index(self.indices['scan'][int(id_string)])
@@ -134,7 +135,7 @@ class SpectrumFile:
             index = spectrum['index']
 
             scan_match = re.match(r'.+scan(?:\s+)?=(?:\s+)?(\d+)', spectrumID)
-            if not scan_match is None:
+            if scan_match is not None:
                 self.indices['scan'][int(scan_match.group(1))] = index
 
             self.indices['id'][spectrumID] = index
