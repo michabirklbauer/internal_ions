@@ -5,23 +5,16 @@ import logging
 import logging.config
 import json
 import requests
-from datetime import datetime
-from pyteomics import mgf, mzml, mzid
+from pyteomics import mzid
 from urllib.parse import urlparse
-from os.path import exists, splitext, split
-from urllib.request import urlopen
+from os.path import splitext, split
 import os
 import re
 import gzip
 from .spectrumfile import SpectrumFile
 
-RAW_FILE = r"../../data/2020_09_90_092320_Hazbun_SigmaGluC_CID_orbiorbi.mgf"
-IDENT_FILE = r"../../data/2020_09_90_092320_Hazbun_Sigma_GluC_CID_orbiorbi_peptide.mzid"
-
 RANK_LIMIT = 1
 
-# RAW_FILE = r"https://ftp.pride.ebi.ac.uk/pride/data/archive/2017/08/PXD006552/generated/Pt1_F_100K_tech-rep1.pride.mgf.gz"
-# IDENT_FILE = r"https://ftp.pride.ebi.ac.uk/pride/data/archive/2017/08/PXD006552/peptides_1_1_0.mzid.gz"
 
 # Excerpt from MS:1001143 items (PSM-level search engine specific statistic)
 STANDARD_SEARCHENGINE_SCORES = [
@@ -104,7 +97,7 @@ class Parser:
                     self.logger.error(f"File doesn't exist: {raw_file}")
                     raise Exception("File doesn't exist")
             self.__load(raw_file_name, ident_file_name, file_format)
-        except Exception as ex:
+        except Exception:
             self.logger.error(f"Couldn't read file. Exception:\n{traceback.format_exc()}")
 
         self.logger.info(f"Read {len(self.psm_list)} PSMs from identification file")
@@ -183,7 +176,7 @@ class Parser:
                         )
 
                         filename = split(psm["location"])[1]
-                        if not modifications is None:
+                        if modifications is not None:
                             aas = [""] + [aa for aa in sequence] + [""]
                             for mod in modifications:
                                 loc = mod["location"]
@@ -307,17 +300,10 @@ class Parser:
         if len(all_scores) != 0:
             if len(all_scores) > 1:
                 self.logger.warning(
-                    f"More than one score was found in the identification"
-                    + f"file {all_scores}, used score: {all_scores[0]}"
+                    "More than one score was found in the identification"
+                    f"file {all_scores}, used score: {all_scores[0]}"
                 )
             return all_scores[0]
         else:
             self.logger.info(keys)
             raise Exception("No known score metric found in mzIdentML file.")
-
-
-if __name__ == "__main__":
-    parser = Parser()
-    spectra = parser.read(RAW_FILE, IDENT_FILE, "infer")
-
-    print(spectra[:5])
