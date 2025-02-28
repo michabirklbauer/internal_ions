@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from .fragannot_numba import FragannotNumba
 
 import os
@@ -9,6 +7,7 @@ from datetime import datetime
 from typing import Dict
 from typing import List
 from typing import BinaryIO
+
 
 def fragannot_call(spectrum_file: BinaryIO,
                    identifications_file: BinaryIO,
@@ -27,7 +26,6 @@ def fragannot_call(spectrum_file: BinaryIO,
         os.makedirs(tmp_dir_name)
     else:
         os.makedirs(tmp_dir_name)
-
 
     output_name_prefix = tmp_dir_name + "/" + datetime.now().strftime("%b-%d-%Y_%H-%M-%S") + "_" + str(random.randint(10000, 99999))
 
@@ -53,12 +51,12 @@ def fragannot_call(spectrum_file: BinaryIO,
     # remove written files
     try:
         os.remove(output_name_prefix + spectrum_file.name)
-    except Exception as e:
+    except Exception:
         if verbose:
             print("Could not remove file: " + output_name_prefix + spectrum_file.name)
     try:
         os.remove(output_name_prefix + identifications_file.name)
-    except Exception as e:
+    except Exception:
         if verbose:
             print("Could not remove file: " + output_name_prefix + identifications_file.name)
 

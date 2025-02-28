@@ -1,18 +1,13 @@
 # Dependencies
 import json
-import numpy as np
 import re
 from pyteomics import mass
 from itertools import tee
-from random import uniform
 from pyteomics import parser
-import os
 import ms_deisotope
 
 # type hinting
-from typing import List
-from typing import Dict
-from typing import Any
+from typing import List, Dict, Any
 
 from . import constant
 from .parser import Parser as Parser
@@ -23,7 +18,7 @@ from numba.typed import List as numbaList
 import multiprocessing
 from joblib import Parallel, delayed
 from tqdm import tqdm
-from stqdm import stqdm
+
 
 class FragannotNumba:
     # set CPU cores here
@@ -31,37 +26,38 @@ class FragannotNumba:
         self.nr_used_cores = multiprocessing.cpu_count() - reserved_cores
 
     def fragment_annotation(
-        self,
-        ident_file: str,
-        spectra_file: str,
-        tolerance: float,
-        fragment_types: List[str],
-        charges: List[str],
-        losses: List[str],
-        file_format: str,
-        deisotope: bool,
-        parser_pattern: str,
-        write_file: bool = True) -> List[Dict[str, Any]]:
+            self,
+            ident_file: str,
+            spectra_file: str,
+            tolerance: float,
+            fragment_types: List[str],
+            charges: List[str],
+            losses: List[str],
+            file_format: str,
+            deisotope: bool,
+            parser_pattern: str,
+            write_file: bool = True) -> List[Dict[str, Any]]:
 
         return fragment_annotation(ident_file, spectra_file, tolerance,
                                    fragment_types, charges, losses, file_format,
                                    deisotope, parser_pattern, write_file, self.nr_used_cores)
 
+
 # set micro batching and batch params here
 def fragment_annotation(
-    ident_file: str,
-    spectra_file: str,
-    tolerance: float,
-    fragment_types: List[str],
-    charges: List[str] | str,
-    losses: List[str],
-    file_format: str,
-    deisotope: bool,
-    parser_pattern: str,
-    write_file: bool = True,
-    nr_used_cores: int = 1,
-    micro_batch: bool = True,
-    batch_size: int = 100) -> List[Dict[str, Any]]:
+        ident_file: str,
+        spectra_file: str,
+        tolerance: float,
+        fragment_types: List[str],
+        charges: List[str] | str,
+        losses: List[str],
+        file_format: str,
+        deisotope: bool,
+        parser_pattern: str,
+        write_file: bool = True,
+        nr_used_cores: int = 1,
+        micro_batch: bool = True,
+        batch_size: int = 100) -> List[Dict[str, Any]]:
     """
     Annotate theoretical and observed fragment ions in a spectra file.
 
@@ -89,9 +85,9 @@ def fragment_annotation(
 
     print("Fragannot running using " + str(nr_used_cores) + " logical cores.\n")
 
-    P = Parser(parser_pattern = parser_pattern, is_streamlit = True)
+    P = Parser(parser_pattern=parser_pattern, is_streamlit=True)
 
-    all_psms = P.read(spectra_file, ident_file, file_format = file_format)
+    all_psms = P.read(spectra_file, ident_file, file_format=file_format)
     # construct list of psms with only one psm per spectrum
     psms = list()
     # construct dict of psms mapping spectrum_id to nr_idents_with_same_rank
@@ -117,12 +113,12 @@ def fragment_annotation(
             else:
                 current_batch = psms[i:len(psms)]
                 still_spectra_available = False
-            p_result = Parallel(n_jobs = nr_used_cores)(delayed(calculate_ions_for_psms)(psm, tolerance, fragment_types, charges, losses, deisotope) for psm in current_batch)
+            p_result = Parallel(n_jobs=nr_used_cores)(delayed(calculate_ions_for_psms)(psm, tolerance, fragment_types, charges, losses, deisotope) for psm in current_batch)
             psms_json += list(p_result)
             i += batch_size
     else:
-        p_psms = tqdm(psms) # tqdm is good for cli but bad for streamlit progress
-        p_result = Parallel(n_jobs = nr_used_cores)(delayed(calculate_ions_for_psms)(psm, tolerance, fragment_types, charges, losses, deisotope) for psm in p_psms)
+        p_psms = tqdm(psms)  # tqdm is good for cli but bad for streamlit progress
+        p_result = Parallel(n_jobs=nr_used_cores)(delayed(calculate_ions_for_psms)(psm, tolerance, fragment_types, charges, losses, deisotope) for psm in p_psms)
         psms_json = list(p_result)
 
     for psm in psms_json:
@@ -138,12 +134,13 @@ def fragment_annotation(
         psms_dict[psm["spectrum_id"]]["precursor_intensity"] = psm["precursor_intensity"]
 
     if write_file:
-        with open(P.output_fname, "w", encoding = "utf8") as f:
+        with open(P.output_fname, "w", encoding="utf8") as f:
             json.dump(psms_dict, f)
 
     print("\nFinished spectrum annotation.")
 
     return psms_dict
+
 
 def calculate_ions_for_psms(psm,
                             tolerance: float,
@@ -163,11 +160,11 @@ def calculate_ions_for_psms(psm,
         charges_used = charges
 
     theoretical_fragment_code = compute_theoretical_fragments(
-        sequence_length = len(psm.peptidoform.sequence),
-        fragment_types = numbaList(fragment_types),
-        charges = numbaList([int(c) for c in charges_used]),
-        neutral_losses = numbaList(losses),
-        internal = True
+        sequence_length=len(psm.peptidoform.sequence),
+        fragment_types=numbaList(fragment_types),
+        charges=numbaList([int(c) for c in charges_used]),
+        neutral_losses=numbaList(losses),
+        internal=True
     )
 
     theoretical_fragment_dict = {
@@ -183,8 +180,7 @@ def calculate_ions_for_psms(psm,
         intensities = psm.spectrum["intensity"].tolist()
 
     annotation_mz, annotation_code, annotation_count = match_fragments(
-        mzs, theoretical_fragment_dict, tolerance = tolerance
-    )
+        mzs, theoretical_fragment_dict, tolerance=tolerance)
 
     psm.spectrum["intensity"] = intensities
     psm.spectrum["mz"] = mzs
@@ -201,25 +197,26 @@ def calculate_ions_for_psms(psm,
             # "precursor_charge": int(psm.get_precursor_charge()),
             "precursor_intensity": 666}
 
+
 def deisotope_peak_list(mzs: List[float], intensities: List[float]) -> List[List[float]]:
     peaks = ms_deisotope.deconvolution.utils.prepare_peaklist(zip(mzs, intensities))
     deconvoluted_peaks, targeted = ms_deisotope.deconvolute_peaks(
-        peaks, averagine = ms_deisotope.peptide, scorer = ms_deisotope.MSDeconVFitter(10.0), verbose = True
-    )
+        peaks, averagine=ms_deisotope.peptide, scorer=ms_deisotope.MSDeconVFitter(10.0), verbose=True)
     mzs = [p.mz for p in deconvoluted_peaks.peaks]
     intensities = [p.intensity for p in deconvoluted_peaks.peaks]
 
     return mzs, intensities
 
-@jit(nopython = True, cache = True)
-def compute_theoretical_fragments(
-    sequence_length: int,
-    fragment_types: List[str],
-    charges: List[int] = [1],
-    neutral_losses: List[str] = [],
-    internal: bool = True) -> List[str]:
 
-    #ion_directions = constant.ion_direction
+@jit(nopython=True, cache=True)
+def compute_theoretical_fragments(
+        sequence_length: int,
+        fragment_types: List[str],
+        charges: List[int] = [1],
+        neutral_losses: List[str] = [],
+        internal: bool = True) -> List[str]:
+
+    # ion_directions = constant.ion_direction
     ion_directions = {
         "a": "n-term",
         "b": "n-term",
@@ -304,6 +301,7 @@ def compute_theoretical_fragments(
 
     return n_term_frags_with_nl + c_term_frags_with_nl + internal_frags_with_nl
 
+
 def theoretical_mass_to_charge(fragment_code: str, peptidoform) -> float:
 
     start, end, ion_cap_start, ion_cap_end, charge, formula = parse_fragment_code(fragment_code)
@@ -311,9 +309,9 @@ def theoretical_mass_to_charge(fragment_code: str, peptidoform) -> float:
     # peptide and modification mass
     sequence = []
     mods = []
-    for aa, mod in peptidoform.parsed_sequence[start - 1 : end]:
+    for aa, mod in peptidoform.parsed_sequence[start - 1: end]:
         sequence.append(aa)
-        if not mod is None:
+        if mod is not None:
             mods.extend([m.mass for m in mod])
 
     # mass AA sequence
@@ -335,14 +333,15 @@ def theoretical_mass_to_charge(fragment_code: str, peptidoform) -> float:
 
     return fragment_mass
 
+
 def parse_fragment_code(fragment_code: str):
 
     # test if fragment code format is valid*
     fragment_code_pattern = re.compile(r".+(:).+(@)[0-9]+(:)[0-9]+(\()(\+|\-)[0-9](\))(\[(.*?)\])?")
-    if bool(fragment_code_pattern.match(fragment_code)) == False:
+    if not fragment_code_pattern.match(fragment_code):
         raise RuntimeError("Incorrect fragment code format: {0}".format(fragment_code))
 
-    ## Parse fragment code
+    # Parse fragment code
 
     start, end = [
         int(i) for i in re.search(r"(?<=\@)(.*?)(?=\()", fragment_code).group(1).split(":")
@@ -352,23 +351,21 @@ def parse_fragment_code(fragment_code: str):
     ]  # Get start and end ion caps name
     charge = int(re.search(r"(?<=\()(.*?)(?=\))", fragment_code).group(1))  # get charge state
     formula = re.search(r"(?<=\[)(.*?)(?=\])", fragment_code)
-    if formula == None:
+    if formula is None:
         formula = ""
     else:
         formula = str(re.search(r"(?<=\[)(.*?)(?=\])", fragment_code).group(1))
 
     return start, end, ion_cap_start, ion_cap_end, charge, formula
 
+
 def match_fragments(exp_mz, theo_frag, tolerance: float):
 
-    theo_frag = [[k, v] for k, v in sorted(theo_frag.items(), key = lambda item: item[1])]
-
+    theo_frag = [[k, v] for k, v in sorted(theo_frag.items(), key=lambda item: item[1])]
     re_term = re.compile(r"^t:|:t")
-
     iter_2, last_match = tee(iter(theo_frag))
 
     d = {}
-
     fragment_theoretical_code = []
     fragment_theoretical_mz = []
     fragment_theoretical_nmatch = []
@@ -405,7 +402,7 @@ def match_fragments(exp_mz, theo_frag, tolerance: float):
 
             if closest is None:
                 closest = min(
-                    d[i], key = lambda t: t[2]
+                    d[i], key=lambda t: t[2]
                 )  # add the only the annotation with the lowest mass error
 
             fragment_theoretical_code.append(closest[0])
