@@ -168,7 +168,6 @@ def main(argv=None) -> None:
 
         if not deconvoluted_spectra:
             # Add additional parameters here
-            st.session_state["monoisotopic"] = False
             max_charge_auto = st.checkbox("Auto-select Max Charge",
                                           key="max_charge_auto",
                                           value=False,
@@ -195,13 +194,6 @@ def main(argv=None) -> None:
                         key="charge_reduction",
                         value=False,
                         help="Charge reduction implies that a charge is lost upon fragmentation event. This is typically the case for electron-based fragmentation (e.g. ETD ECD).")
-        else:
-            # Set default parameters here
-            st.session_state["max_charge"] = 1
-            st.session_state["monoisotopic"] = True
-            st.session_state["max_isotope_auto"] = True
-            st.session_state["max_isotope"] = 5
-            st.session_state["charge_reduction"] = False
 
     ############################################################################
         st.subheader("About the Project", divider=DIV_COLOR)
