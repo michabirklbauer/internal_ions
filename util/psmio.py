@@ -2,19 +2,16 @@ import os
 import shutil
 import random
 from datetime import datetime
-
 from psm_utils import io as psm_io
 
-from typing import Dict
-from typing import BinaryIO
-
-from util.spectrumio import parse_scannr
+from typing import Dict, BinaryIO
+from fragannot.spectrumfile import SpectrumFile
 
 
 def read_identifications(filename: str | BinaryIO,
                          filetype: str,
                          name: str,
-                         pattern: str = "\\.\\d+\\.",
+                         spec_file: str | BinaryIO,
                          verbose: bool = False) -> Dict[str, Dict]:
     """
     Returns a dictionary that proteins/peptides to scan numbers:
@@ -23,7 +20,6 @@ def read_identifications(filename: str | BinaryIO,
          "peptides": Dict[str, Set[int]]
     """
 
-    psms = list()
     if isinstance(filename, str):
         psms = psm_io.read_file(filename, filetype=filetype)
     else:
@@ -34,8 +30,7 @@ def read_identifications(filename: str | BinaryIO,
         output_name_prefix = tmp_dir_name + "/" + datetime.now().strftime("%b-%d-%Y_%H-%M-%S") + "_" + str(random.randint(10000, 99999))
         with open(output_name_prefix + filename.name, "wb") as f:
             f.write(filename.getbuffer())
-            f.close()
-        psms = psm_io.read_file(output_name_prefix + filename.name, filetype = filetype)
+        psms = psm_io.read_file(output_name_prefix + filename.name, filetype=filetype)
         try:
             os.remove(output_name_prefix + filename.name)
         except Exception:
@@ -47,24 +42,17 @@ def read_identifications(filename: str | BinaryIO,
 
     proteins_to_scannr = dict()
     peptides_to_scannr = dict()
-    scannr_to_peptidoforms = dict()
     peptide_to_peptidoforms = dict()
     proteins_to_peptides = dict()
+    spec_file = SpectrumFile(spec_file)
+    scan_numbers = {spec_id: i for i, spec_id in enumerate(spec_file.index)}
 
     print("Read identifications in total:")
 
     nr_psms = 0
     for psm in psms:
-        # spectrum identfier, can also be str
-        # see https://psm-utils.readthedocs.io/en/v1.2.0/api/psm_utils/#psm_utils.PSM
-        # don't know how to handle tbh
-        parsed_scan_nr = parse_scannr(psm["spectrum_id"], 0, pattern)
-        scan_nr = parsed_scan_nr[1]
-        if parsed_scan_nr[0] != 0:
-            raise RuntimeError(f"Could not parse scan nr from spectrum id {psm['spectrum_id']}.")
-        # this should return the unmodified peptide sequence
-        # according to https://psm-utils.readthedocs.io/en/v1.2.0/api/psm_utils/#psm_utils.Peptidoform
         peptide = psm.peptidoform.sequence
+        scan_nr = scan_numbers[psm.spectrum_id]
         # begin parse necessary information
         # peptides_to_scannr
         if peptide in peptides_to_scannr:
@@ -78,14 +66,7 @@ def read_identifications(filename: str | BinaryIO,
                     proteins_to_scannr[protein].add(scan_nr)
                 else:
                     proteins_to_scannr[protein] = {scan_nr}
-        # scannr_to_peptidoforms
-        # using psm.peptidoform.proforma
-        # see https://psm-utils.readthedocs.io/en/v1.2.0/api/psm_utils/#psm_utils.Peptidoform
-        if scan_nr in scannr_to_peptidoforms:
-            scannr_to_peptidoforms[scan_nr].add(psm.peptidoform.proforma)
-        else:
-            scannr_to_peptidoforms[scan_nr] = {psm.peptidoform.proforma}
-        # peptide_to_peptidoforms
+
         if peptide in peptide_to_peptidoforms:
             peptide_to_peptidoforms[peptide].add(psm.peptidoform.proforma)
         else:
@@ -107,6 +88,6 @@ def read_identifications(filename: str | BinaryIO,
     return {"name": name,
             "proteins_to_scannr": proteins_to_scannr,
             "peptides_to_scannr": peptides_to_scannr,
-            "scannr_to_peptidoforms": scannr_to_peptidoforms,
+            # "scannr_to_peptidoforms": scannr_to_peptidoforms,
             "peptide_to_peptidoforms": peptide_to_peptidoforms,
             "proteins_to_peptides": proteins_to_peptides}

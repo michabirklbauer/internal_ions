@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import streamlit as st
 
 from fraggraph.combine_spectra import combine_spectra
@@ -236,8 +234,7 @@ def main(argv=None) -> None:
                     with st_stdout("info"):
                         st.session_state["filtered_spectra"] = filter_spectra(st.session_state["spectra"]["spectra"],
                                                                               filter_params,
-                                                                              st.session_state["spectra"]["name"],
-                                                                              st.session_state["mgf_parser_pattern"])
+                                                                              st.session_state["spectra"]["name"])
 
                     filter_status.update(label="Successfully finished filtering spectra.", state="complete")
             else:
@@ -290,8 +287,7 @@ def main(argv=None) -> None:
 
         if "selected_peptide_scans" in st.session_state and st.session_state["selected_peptide_scans"] is not None:
             selected_peptide = st.session_state["selected_peptide_scans"]
-            possible_selection_values = [selected_peptide] + \
-                                        [peptidoform for peptidoform in st.session_state["identifications"]["peptide_to_peptidoforms"][selected_peptide]]
+            possible_selection_values = [selected_peptide] + list(st.session_state["identifications"]["peptide_to_peptidoforms"][selected_peptide])
             fg_peptidoform1 = st.selectbox("Specify a peptidoform to consider:",
                                            possible_selection_values,
                                            index=None,
@@ -313,8 +309,7 @@ def main(argv=None) -> None:
                                                      "ARTKQTARKSTGGKAPRKQLATKAARKSAPATGGVKKPHRYRPGTVALRE.")
 
             if fg_selected_peptide1 is not None:
-                possible_peptidoforms = [fg_selected_peptide1] + \
-                                        [peptidoform for peptidoform in st.session_state["identifications"]["peptide_to_peptidoforms"][fg_selected_peptide1]]
+                possible_peptidoforms = [fg_selected_peptide1] + list(st.session_state["identifications"]["peptide_to_peptidoforms"][fg_selected_peptide1])
                 fg_peptidoform1 = st.selectbox("Specify a peptidoform to consider:",
                                                possible_peptidoforms,
                                                index=None,

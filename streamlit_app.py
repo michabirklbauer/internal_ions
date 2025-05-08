@@ -1,14 +1,4 @@
-#!/usr/bin/env python3
-
-"""
-#####################################################
-##                                                 ##
-##            -- STREAMLIT MAIN APP --             ##
-##                                                 ##
-#####################################################
-"""
-
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 import pandas as pd
 import streamlit as st
@@ -30,59 +20,17 @@ def main_page():
 
     st.title("Internal Ions Explorer")
 
-    general_description = \
-    """
-    Description text.
-    """
-    st.markdown(general_description)
-
     # set tab names here
     tab1, tab2, tab3, tab4 = st.tabs(["Data Import & Annotation", "Statistics", "Fraggraph", "Documentation"])
-
-    div = \
-    """
-    #####################################################
-    ##                                                 ##
-    ##                   -- TAB 1 --                   ##
-    ##                                                 ##
-    #####################################################
-    """
 
     with tab1:
         tab1_main()
 
-    div = \
-    """
-    #####################################################
-    ##                                                 ##
-    ##                   -- TAB 2 --                   ##
-    ##                                                 ##
-    #####################################################
-    """
-
     with tab2:
         tab2_main()
 
-    div =\
-    """
-    #####################################################
-    ##                                                 ##
-    ##                   -- TAB 3 --                   ##
-    ##                                                 ##
-    #####################################################
-    """
-
     with tab3:
         tab3_main()
-
-    div =\
-    """
-    #####################################################
-    ##                                                 ##
-    ##                   -- TAB 3 --                   ##
-    ##                                                 ##
-    #####################################################
-    """
 
     with tab4:
         tab4_main()
@@ -91,11 +39,7 @@ def main_page():
 # side bar and main page loader
 def main(argv=None) -> None:
 
-    about_str = \
-    """
-    Description text.
-    """ + \
-    f"\nThe server is running Fragment Explorer version {__version__}!"
+    about_str = f"The server is running Fragment Explorer version {__version__}!"
 
     st.set_page_config(page_title="Fragannot",
                        page_icon=":test_tube:",
@@ -117,13 +61,6 @@ def main(argv=None) -> None:
     ############################################################################
         st.subheader("Parameters", divider=DIV_COLOR)
         st.markdown("These parameters will be used globally across the internal ions explorer.")
-
-        # mgf parsing
-        st.markdown("**MGF Parsing**")
-        st.text_input("Regex pattern used for parsing scan numbers of spectra from the MGF file.",
-                      key="mgf_parser_pattern",
-                      value="\\.\\d+\\.",
-                      help="The regex pattern for parsing scan numbers of spectra from the MGF file.")
 
         # tolerance
         st.markdown("**Tolerance**")

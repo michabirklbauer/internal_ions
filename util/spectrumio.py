@@ -1,100 +1,7 @@
-import re
 from pyteomics import mgf
-from typing import Any, Dict, Tuple, BinaryIO
+from typing import Any, Dict, BinaryIO
 
 
-# parse scan number from pyteomics mgf params
-def parse_scannr(obj: dict | str | int,  i: int, pattern: str = "\\.\\d+\\.") -> Tuple[int, int]:
-    """Parses the scan number from the params dictionary of the pyteomics mgf
-    spectrum.
-
-    Parameters
-    ----------
-    object : dict, str, or int
-        The "params" dictionary of the pyteomics mgf spectrum, or a `psm_utils.spectrum_id`.
-
-    i : int
-        The scan number to be returned in case of failure.
-
-    pattern : str
-        Regex pattern to use for parsing the scan number from the title if it
-        can't be infered otherwise.
-
-    Returns
-    -------
-    (exit_code, scan_nr) : Tuple
-        A tuple with the exit code (0 if successful, 1 if parsing failed) at the
-        first position [0] and the scan number at the second position [1].
-    """
-    
-    # if input is already a number, assume it's a scan number
-    if isinstance(obj, int):
-        return obj
-    
-    # if input is a string, assume it's spectrum title or spectrum id
-    if isinstance(obj, str):
-        # if there is a scan token in the title, try parse scan_nr
-        if "scan" in obj:
-            try:
-                return (0, int(obj.split("scan=")[1].strip("\"")))
-            except Exception:
-                pass
-    
-        # else try to parse by pattern
-        try:
-            scan_nr = re.findall(pattern, obj)[0]
-            scan_nr = re.sub(r"[^0-9]", "", scan_nr)
-            if len(scan_nr) > 0:
-                return (0, int(scan_nr))
-        except IndexError:
-            pass
-    
-        # else try parse whole title
-        try:
-            return (0, int(float(obj)))
-        except ValueError:
-            pass
-
-    # if input is dictionary, assume it's mgf params
-    if isinstance(obj, dict):
-        params = obj
-        # prefer scans attr over title attr
-        if "scans" in params:
-            try:
-                return (0, int(params["scans"]))
-            except ValueError:
-                pass
-
-        # try parse title
-        if "title" in params:
-
-            # if there is a scan token in the title, try parse scan_nr
-            if "scan" in params["title"]:
-                try:
-                    return (0, int(params["title"].split("scan=")[1].strip("\"")))
-                except (IndexError, ValueError):
-                    pass
-
-            # else try to parse by pattern
-            try:
-                scan_nr = re.findall(pattern, params["title"])[0]
-                scan_nr = re.sub(r"[^0-9]", "", scan_nr)
-                if len(scan_nr) > 0:
-                    return (0, int(scan_nr))
-            except IndexError:
-                pass
-
-            # else try parse whole title
-            try:
-                return (0, int(params["title"]))
-            except ValueError:
-                pass
-
-    # return unsuccessful parse
-    return (1, i)
-
-
-# reading spectra
 def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.") -> Dict[int, Dict]:
     """
     Returns a dictionary that maps scan numbers to spectra:
@@ -107,7 +14,7 @@ def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.
                                      "peaks"            -> Dict[m/z -> intensity]]
     """
 
-    result_dict = dict()
+    result_dict = {}
 
     print("Read spectra in total:")
 
@@ -117,19 +24,18 @@ def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.
             if (s + 1) % 1000 == 0:
                 print(f"\t{s + 1}")
 
-            scan_nr = parse_scannr(spectrum["params"], -s, pattern)[1]
-            spectrum_dict = dict()
+            scan_nr = s  # parse_scannr(spectrum["params"], -s, pattern)[1]
+            spectrum_dict = {}
             spectrum_dict["spectrum"] = spectrum
             spectrum_dict["precursor"] = spectrum["params"]["pepmass"]
             spectrum_dict["charge"] = spectrum["params"]["charge"]
-            spectrum_dict["rt"] = 0.0 if "rtinseconds" not in spectrum["params"] else spectrum["params"]["rtinseconds"]
+            spectrum_dict["rt"] = spectrum["params"].get("rtinseconds", 0.0)
             spectrum_dict["max_intensity"] = float(max(spectrum["intensity array"]))
-            peaks = dict()
+            peaks = {}
             for i, mz in enumerate(spectrum["m/z array"]):
                 peaks[mz] = spectrum["intensity array"][i]
             spectrum_dict["peaks"] = peaks
             result_dict[scan_nr] = spectrum_dict
-        reader.close()
 
     print(f"\nFinished reading {s + 1} spectra!")
 
@@ -137,7 +43,7 @@ def read_spectra(filename: str | BinaryIO, name: str, pattern: str = "\\.\\d+\\.
 
 
 # TODO this can be optimized
-def filter_spectra(mass_spectra: Dict[int, Any], filter_params: Dict[str, Any], name: str, pattern: str = "\\.\\d+\\.") -> Dict[str, Any]:
+def filter_spectra(mass_spectra: Dict[int, Any], filter_params: Dict[str, Any], name: str) -> Dict[str, Any]:
     """
     Returns a Dict including a list of spectra from pyteomics.mgf based on the given filter criteria:
     Dict["name": name,
@@ -149,7 +55,7 @@ def filter_spectra(mass_spectra: Dict[int, Any], filter_params: Dict[str, Any], 
 
     print("Filtered spectra in total:")
 
-    for s, key in enumerate(mass_spectra.keys()):
+    for s, key in enumerate(mass_spectra):
         spectrum = mass_spectra[key]["spectrum"]
         
         if (s + 1) % 1000 == 0:
@@ -164,7 +70,7 @@ def filter_spectra(mass_spectra: Dict[int, Any], filter_params: Dict[str, Any], 
 
         if "last_scan" in filter_params:
             if scan_nr > int(filter_params["last_scan"]):
-                continue
+                break  # scans are in order, so no need to look anymore
 
         if "min_mz" in filter_params:
             if float(spectrum["params"]["pepmass"][0]) < float(filter_params["min_mz"]):

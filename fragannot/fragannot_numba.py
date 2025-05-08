@@ -7,7 +7,7 @@ from pyteomics import parser
 import ms_deisotope
 
 # type hinting
-from typing import List, Dict, Any
+from typing import List, Dict, Any, BinaryIO
 
 from . import constant
 from .parser import Parser as Parser
@@ -27,33 +27,31 @@ class FragannotNumba:
 
     def fragment_annotation(
             self,
-            ident_file: str,
-            spectra_file: str,
+            ident_file: BinaryIO,
+            spectra_file: BinaryIO,
             tolerance: float,
             fragment_types: List[str],
             charges: List[str],
             losses: List[str],
             file_format: str,
             deisotope: bool,
-            parser_pattern: str,
             write_file: bool = True) -> List[Dict[str, Any]]:
 
         return fragment_annotation(ident_file, spectra_file, tolerance,
                                    fragment_types, charges, losses, file_format,
-                                   deisotope, parser_pattern, write_file, self.nr_used_cores)
+                                   deisotope, write_file, self.nr_used_cores)
 
 
 # set micro batching and batch params here
 def fragment_annotation(
-        ident_file: str,
-        spectra_file: str,
+        ident_file: BinaryIO,
+        spectra_file: BinaryIO,
         tolerance: float,
         fragment_types: List[str],
         charges: List[str] | str,
         losses: List[str],
         file_format: str,
         deisotope: bool,
-        parser_pattern: str,
         write_file: bool = True,
         nr_used_cores: int = 1,
         micro_batch: bool = True,
@@ -63,10 +61,8 @@ def fragment_annotation(
 
     Parameters:
     ----------
-    ident_file : str
-        Filename of an identification file
-    spectra_file : str
-        Filename of a spectra file
+    ident_file : BinaryIO
+    spectra_file : BinaryIO
     tolerance : float
         Tolerance value in ppm for fragment matching
     fragment_types : list
@@ -85,7 +81,7 @@ def fragment_annotation(
 
     print("Fragannot running using " + str(nr_used_cores) + " logical cores.\n")
 
-    P = Parser(parser_pattern=parser_pattern, is_streamlit=True)
+    P = Parser(is_streamlit=True)
 
     all_psms = P.read(spectra_file, ident_file, file_format=file_format)
     # construct list of psms with only one psm per spectrum
@@ -176,7 +172,7 @@ def calculate_ions_for_psms(psm,
             psm.spectrum["mz"].tolist(), psm.spectrum["intensity"].tolist()
         )
     else:
-        mzs = psm.spectrum["mz"]
+        mzs = psm.spectrum["mz"].tolist()
         intensities = psm.spectrum["intensity"].tolist()
 
     annotation_mz, annotation_code, annotation_count = match_fragments(
