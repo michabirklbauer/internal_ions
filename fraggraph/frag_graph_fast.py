@@ -1,4 +1,5 @@
 # Standard Library Imports
+
 import math
 import itertools
 import os.path
@@ -28,6 +29,9 @@ from scipy.optimize import minimize
 from tqdm import tqdm
 import plotly.express as px
 import json     # SK
+from multiprocessing import Pool, cpu_count # SK
+
+
 
 
 class FragGraph(nx.DiGraph):
@@ -260,28 +264,26 @@ class FragGraph(nx.DiGraph):
         self.set_node_title_as_attributes()
         self.set_position_nodes()
 
-        self.save_graph_state("new_graph_seq1.json")
+        # self.save_graph_state("new_graph_seq1_t11f.json")     # SK
 
         print("Graph generated")
         # print(f"Nodes: {self.nodes}")
         # print(f"Edges: {self.edges}")
         return self.nodes, self.edges
 
-    def save_graph_state(self, filename):
-        def make_serializable(obj):
-            # Falls es ein Netzwerk-Knoten oder Kantenobjekt ist, einfach als dict oder string abspeichern
-            if isinstance(obj, (set, tuple)):
-                return list(obj)
-            if hasattr(obj, "__dict__"):
-                return obj.__dict__
-            return str(obj)
-
-        # Konvertiere alle Inhalte in serialisierbare Form
-        clean_nodes = {k: make_serializable(v) for k, v in self.nodes.items()}
-        clean_edges = [make_serializable(edge) for edge in self.edges]
-
-        with open(filename, "w") as f:
-            json.dump({"nodes": clean_nodes, "edges": clean_edges}, f, indent=2, sort_keys=True)
+        #
+        # def make_serializable(obj):       # SK
+        #     if isinstance(obj, (set, tuple)):
+        #         return list(obj)
+        #     if hasattr(obj, "__dict__"):
+        #         return obj.__dict__
+        #     return str(obj)
+        #
+        # clean_nodes = {k: make_serializable(v) for k, v in self.nodes.items()}
+        # clean_edges = [make_serializable(edge) for edge in self.edges]
+        #
+        # with open(filename, "w") as f:
+        #     json.dump({"nodes": clean_nodes, "edges": clean_edges}, f, indent=2, sort_keys=True)
 
 
     def add_node(self, node_id, parent=None, **kwargs):
@@ -361,23 +363,27 @@ class FragGraph(nx.DiGraph):
 
         return frag_dir
 
-
     def get_fragment_isotope_probabilities(self, node, peptidoform, max_isotope):
+        """
+        Returns the isotope probabilities of a single fragment.
+        """
+        # get the node attributes
         node_dict = self.nodes[node]
+
+        # get the isotope probabilities
         sequence = []
-
-        for aa, mod in peptidoform.parsed_sequence[node_dict["start_pos"]: node_dict["end_pos"]]:
+        mods = []
+        for aa, mod in peptidoform.parsed_sequence[
+                       node_dict["start_pos"]: node_dict["end_pos"]
+                       ]:
             sequence.append(aa)
-        sequence_str = "".join(sequence)
+            if not mod is None:
+                mods.extend([m.mass for m in mod])
+        sequence = "".join(sequence)
 
-        cache_key = (sequence_str, max_isotope)
-        if cache_key in self.isotope_prob_cache:
-            return self.isotope_prob_cache[cache_key]
+        return self.sequence_to_isotopic_probabilities(sequence, max_isotope)
 
-        result = self.sequence_to_isotopic_probabilities(sequence_str, max_isotope)
-        self.isotope_prob_cache[cache_key] = result
-        return result
-
+    @classmethod
     @lru_cache(maxsize=10000)
     def sequence_to_isotopic_probabilities(self, sequence, max_isotope):
         composition = cmass.Composition(sequence=sequence)
@@ -389,7 +395,6 @@ class FragGraph(nx.DiGraph):
         # iso_prob = np.round([peak.intensity for peak in theoretical_isotopic_cluster], 4).tolist() ????
 
         return iso_prob
-
 
 
     def get_fragment_theoretical_mz(
@@ -411,7 +416,7 @@ class FragGraph(nx.DiGraph):
         #     if not mod is None:
         #         mods.extend([m.mass for m in mod])
 
-        sequence, mods = zip(*peptidoform.parsed_sequence[start - 1 : end]) if peptidoform.parsed_sequence else ([], [])
+        sequence, mods = zip(*peptidoform.parsed_sequence[start - 1 : end]) if peptidoform.parsed_sequence else ([], []) #SK
 
         # formula = "".join(formula)
         # loss mass
@@ -480,7 +485,7 @@ class FragGraph(nx.DiGraph):
         n_fragment_range = [
             (1, i)
             for i in range(len(peptidoform.sequence) - 1)
-            if i >= self.min_frag_length # basically iota in c++???
+            if i >= self.min_frag_length
         ]
         c_fragment_range = [
             (i, len(peptidoform.sequence))
@@ -661,7 +666,7 @@ class FragGraph(nx.DiGraph):
             # Get the intermediate 1 nodes with the closest mz
             # closest_mz = min(self.I_1_nodes_mz, key=lambda x: abs(x - frag_mz))
 
-            idx_closest_mz = np.argmin(np.abs(self.I_1_nodes_mz - frag_mz))
+            idx_closest_mz = np.argmin(np.abs(self.I_1_nodes_mz - frag_mz)) # SK
             closest_mz = self.I_1_nodes_mz[idx_closest_mz]
             # helper for time measuring
             # closest_mz = self.get_closest_mz(frag_mz)
@@ -736,6 +741,7 @@ class FragGraph(nx.DiGraph):
             charge_lookup = self.get_charge_lookup(charge_prob, length)
 
         # annotate the intermediate_1 node with the charge lookup
+        # (for each possible charge: create a new intermediate_2 node with updated m/z and frag_code)
         # node_ids = []
         for charge in charge_lookup:
             frag_mz = self.update_framgent_theoretical_mz_charge(
@@ -1088,7 +1094,7 @@ class FragGraph(nx.DiGraph):
 
         # Step 3: Remove all unmarked nodes and their branches except node of type intermediate_0
         # with tqdm(total=len(list(self.nodes.keys())), desc="removing non annotated fragments") as pbar:
-        print("\033[91mremoving non annotated fragments\033[0m")
+        print("\033[91mremoving non annotated fragnts\033[0m")
         for node in list(self.nodes.keys()):
             if node not in visited and self.nodes[node]["node_type"] not in [
                 "root",
@@ -2537,4 +2543,5 @@ class FragGraph(nx.DiGraph):
                 )
 
         return df
+
 
