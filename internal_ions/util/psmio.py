@@ -1,29 +1,30 @@
+import os
+import streamlit as st
 from psm_utils.io import read_file
 from psm_utils.psm_list import PSMList
 from tempfile import NamedTemporaryFile
-from typing import Dict, BinaryIO
-from fragannot.spectrumfile import SpectrumFile
+from .spectrumio import SpectrumFile
 
 
+@st.cache_data(hash_funcs={PSMList: lambda x: tuple(x.runs), SpectrumFile: lambda x: x.name})
 def read_identifications(psms: PSMList,
                          name: str,
-                         spec_file: str | BinaryIO,
-                         verbose: bool = False) -> Dict[str, Dict]:
+                         spec_file: SpectrumFile,
+                         verbose: bool = False) -> dict[str, dict]:
     """
     Returns a dictionary that proteins/peptides to scan numbers:
-    Dict["name": str,
-         "proteins": Dict[str, Set[int]],
-         "peptides": Dict[str, Set[int]]
+    dict["name": str,
+         "proteins": dict[str, Set[int]],
+         "peptides": dict[str, Set[int]]
     """
     if len(psms) == 0:
         print("Error: Couldn't read identifications file!")
-        return {"name": name, "proteins": dict(), "peptides": dict()}
+        return {"name": name, "proteins": {}, "peptides": {}}
 
     proteins_to_scannr = dict()
     peptides_to_scannr = dict()
     peptide_to_peptidoforms = dict()
     proteins_to_peptides = dict()
-    spec_file = SpectrumFile(spec_file)
     scan_numbers = {spec_id: i for i, spec_id in enumerate(spec_file.index)}
 
     print("Read identifications in total:")
@@ -72,7 +73,8 @@ def read_identifications(psms: PSMList,
             "proteins_to_peptides": proteins_to_peptides}
 
 
+@st.cache_data
 def read_id_file(ident_file, file_format):
-    with NamedTemporaryFile() as f:
+    with NamedTemporaryFile(suffix=os.path.splitext(ident_file.name)[1]) as f:
         f.write(ident_file.getbuffer())
         return read_file(f.name, filetype=file_format)

@@ -2,24 +2,15 @@ import json
 
 import streamlit as st
 
-from fragannot.fragannot_call import fragannot_call
+from .fragannot.fragannot_call import fragannot_call
 
-from util.converter import JSONConverter
-from util.redirect import st_stdout
-from util.spectrumio import read_spectra
-from util.psmio import read_identifications, read_id_file
-from util.streamlit_utils import dataframe_to_csv_stream
+from .util.converter import JSONConverter
+from .util.redirect import st_stdout
+from .util.spectrumio import read_spectra, read_spectrum_file
+from .util.psmio import read_identifications, read_id_file
+from .util.streamlit_utils import dataframe_to_csv_stream
 
-from util.constants import DIV_COLOR
-from util.constants import SUPPORTED_FILETYPES
-
-
-def reset_spectra() -> None:
-    st.session_state["rerun_spectra_reading"] = True
-
-
-def reset_identifications() -> None:
-    st.session_state["rerun_identifications_reading"] = True
+from .util.constants import DIV_COLOR, SUPPORTED_FILETYPES
 
 
 def main(argv=None) -> None:
@@ -31,35 +22,29 @@ def main(argv=None) -> None:
     ############################################################################
     st.subheader("Data Import", divider=DIV_COLOR)
 
-    spectrum_file = st.file_uploader("Upload a spectrum file (we assume all spectra are MS2-level):",
-                                     key="spectrum_file",
-                                     type=["mgf"],
-                                     on_change=reset_spectra,
-                                     help="Upload a spectrum file to be analyzed in .mgf format.")
+    uploaded_spectrum_file = st.file_uploader(
+        "Upload a spectrum file (we assume all spectra are MS2-level):",
+        key="uploaded_spectrum_file",
+        type=["mgf"],
+        help="Upload a spectrum file to be analyzed in .mgf format.")
 
-    if spectrum_file is not None:
+    if uploaded_spectrum_file is not None:
         with st.status("Reading spectra...") as spectra_reading_status:
             with st_stdout("info"):
-                if "spectra" not in st.session_state:
-                    st.session_state["spectra"] = read_spectra(spectrum_file, spectrum_file.name)
-                    st.session_state["rerun_spectra_reading"] = False
-                if "spectra" in st.session_state and st.session_state["rerun_spectra_reading"]:
-                    st.session_state["spectra"] = read_spectra(spectrum_file, spectrum_file.name)
-                    st.session_state["rerun_spectra_reading"] = False
+                spectrum_file = read_spectrum_file(uploaded_spectrum_file)
+                # spectra = read_spectra(spectrum_file)
             st.success("Read all spectra successfully!")
-            spectra_reading_status.update(label=f"Read all spectra from file {spectrum_file.name} successfully!", state="complete")
+            spectra_reading_status.update(label=f"Read all spectra from file {uploaded_spectrum_file.name} successfully!", state="complete")
 
     identifications_file = st.file_uploader("Upload an identification file:",
                                             key="identifications_file",
                                             type=None,  # ["mzid"],
-                                            on_change=reset_identifications,
                                             help="Upload a identification file that contains PSMs of the spectrum file in .mzid format.")
 
     identifications_file_format = st.selectbox("Select the file format of the identifications file:",
                                                key="identifications_file_format",
-                                               options=SUPPORTED_FILETYPES,
-                                               index=None,
-                                               on_change=reset_identifications,
+                                               options=['infer'] + SUPPORTED_FILETYPES,
+                                               index=0,
                                                placeholder="None selected!",
                                                help="Select the file format of the identifications file, supported options are based on psm_utils.")
 

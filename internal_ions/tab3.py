@@ -1,14 +1,14 @@
 import streamlit as st
 
-from fraggraph.combine_spectra import combine_spectra
+from .fraggraph.combine_spectra import combine_spectra
 
-from util.redirect import st_stdout
-from util.spectrumio import filter_spectra
-from util.tab3.plots import plot_consensus_spectrum
-from util.tab3.plots import plot_spectra_chromatogram
-from util.tab3.fraggraph import main as fraggraph_main
+from .util.redirect import st_stdout
+from .util.spectrumio import filter_spectra, read_spectrum_file, read_spectra
+from .util.tab3.plots import plot_consensus_spectrum
+from .util.tab3.plots import plot_spectra_chromatogram
+from .util.tab3.fraggraph import main as fraggraph_main
 
-from util.constants import DIV_COLOR
+from .util.constants import DIV_COLOR
 
 from typing import List
 from typing import Dict
@@ -31,17 +31,17 @@ def get_maxmz(selection: Dict[str, Any]) -> float:
     return max(box["y"])
 
 
-def get_minrt(selection: Dict[str, Any]) -> float:
+def get_minrt(selection: Dict[str, Any], spectra) -> float:
     if len(selection.selection.box) == 0:
-        return min([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()])
+        return min([float(s["rt"]) for s in spectra["spectra"].values()])
 
     box = selection.selection.box[-1]
     return min(box["x"])
 
 
-def get_maxrt(selection: Dict[str, Any]) -> float:
+def get_maxrt(selection: Dict[str, Any], spectra) -> float:
     if len(selection.selection.box) == 0:
-        return max([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()])
+        return max([float(s["rt"]) for s in spectra["spectra"].values()])
 
     box = selection.selection.box[-1]
     return max(box["x"])
@@ -64,15 +64,17 @@ def main(argv=None) -> None:
     ############################################################################
     st.subheader("Data Import", divider=DIV_COLOR)
 
-    if "spectra" in st.session_state:
-        st.success(f"Spectra from file \"{st.session_state['spectra']['name']}\" were successfully loaded!")
+    if st.session_state.get("uploaded_spectrum_file"):
+        spectrum_file = read_spectrum_file(st.session_state.uploaded_spectrum_file)
+        spectra = read_spectra(spectrum_file)
+        st.success(f"Spectra from file \"{st.session_state.uploaded_spectrum_file.name}\" were successfully loaded!")
 
     ############################################################################
         st.subheader("Spectrum Selector", divider=DIV_COLOR)
         st.markdown("Using the following fields you can filter your spectra for further analyis.")
 
         # plot chromatogram
-        spectra_chromatogram = st.plotly_chart(plot_spectra_chromatogram(st.session_state["spectra"]["spectra"]),
+        spectra_chromatogram = st.plotly_chart(plot_spectra_chromatogram(spectra["spectra"]),
                                                use_container_width=True,
                                                theme="streamlit",
                                                key="chromatogram",
@@ -83,7 +85,7 @@ def main(argv=None) -> None:
 
         with spec_sel_col1:
             first_scan = st.selectbox("Select the first scan number to analyze:",
-                                      sorted(st.session_state["spectra"]["spectra"].keys()),
+                                      sorted(spectra["spectra"]),
                                       index=0,
                                       help="Select the scan number where analysis should start.",
                                       key="first_scan_filter")
@@ -97,9 +99,9 @@ def main(argv=None) -> None:
                                      key="min_mz_filter")
 
             min_rt = st.number_input("Select the minimum retention time for a spectrum:",
-                                     min_value=min([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()]),
-                                     max_value=max([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()]),
-                                     value=get_minrt(spectra_chromatogram),
+                                     min_value=min([float(s["rt"]) for s in spectra["spectra"].values()]),
+                                     max_value=max([float(s["rt"]) for s in spectra["spectra"].values()]),
+                                     value=get_minrt(spectra_chromatogram, spectra),
                                      step=0.01,
                                      help="The minimum rt.",
                                      key="min_rt_filter")
@@ -114,8 +116,8 @@ def main(argv=None) -> None:
 
         with spec_sel_col2:
             last_scan = st.selectbox("Select the last scan number to analyze:",
-                                     sorted(st.session_state["spectra"]["spectra"].keys()),
-                                     index=len(st.session_state["spectra"]["spectra"].keys()) - 1,
+                                     sorted(spectra["spectra"].keys()),
+                                     index=len(spectra["spectra"].keys()) - 1,
                                      help="Select the scan number where analysis should end.",
                                      key="last_scan_filter")
 
@@ -128,9 +130,9 @@ def main(argv=None) -> None:
                                      key="max_mz_filter")
 
             max_rt = st.number_input("Select the maximum retention time for a spectrum:",
-                                     min_value=min([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()]),
-                                     max_value=max([float(s["rt"]) for s in st.session_state["spectra"]["spectra"].values()]),
-                                     value=get_maxrt(spectra_chromatogram),
+                                     min_value=min([float(s["rt"]) for s in spectra["spectra"].values()]),
+                                     max_value=max([float(s["rt"]) for s in spectra["spectra"].values()]),
+                                     value=get_maxrt(spectra_chromatogram, spectra),
                                      step=0.01,
                                      help="The maximum rt.",
                                      key="max_rt_filter")
@@ -214,7 +216,7 @@ def main(argv=None) -> None:
 
         if run_filter:
             selected_scans_list = [i for i in range(int(first_scan), int(last_scan) + 1)]
-            if "spectra" in st.session_state and st.session_state["spectra"] is not None:
+            if spectra is not None:
                 with st.status("Filtering spectra...") as filter_status:
                     if "selected_scan_numbers" in st.session_state:
                         if st.session_state["selected_scan_numbers"] is not None:
@@ -232,9 +234,9 @@ def main(argv=None) -> None:
                                      "scans": selected_scans_list,
                                      }
                     with st_stdout("info"):
-                        st.session_state["filtered_spectra"] = filter_spectra(st.session_state["spectra"]["spectra"],
+                        st.session_state["filtered_spectra"] = filter_spectra(spectra["spectra"],
                                                                               filter_params,
-                                                                              st.session_state["spectra"]["name"])
+                                                                              spectra["name"])
 
                     filter_status.update(label="Successfully finished filtering spectra.", state="complete")
             else:

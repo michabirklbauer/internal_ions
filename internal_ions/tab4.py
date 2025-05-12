@@ -1,8 +1,9 @@
 import streamlit as st
 
-from util.constants import DIV_COLOR
+from .util.constants import DIV_COLOR
 
-def main(argv = None) -> None:
+
+def main(argv=None) -> None:
 
     readme = ""
 

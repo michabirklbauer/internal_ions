@@ -4,20 +4,20 @@ import pandas as pd
 
 import streamlit as st
 
-from util.tab2.filter import filter_dataframes
-from util.tab2.filter2 import filter_dataframe
+from .util.tab2.filter import filter_dataframes
+from .util.tab2.filter2 import filter_dataframe
 
 # don't use star imports here!
-from util.tab2.plots import common_type_hist
-from util.tab2.plots import common_type_pie
-from util.tab2.plots import mz_dist_ion_type
-from util.tab2.plots import rel_ion_intens_perc
-from util.tab2.plots import rel_ion_intens_ridge
-from util.tab2.plots import per_spec_ion_type
-from util.tab2.plots import per_spec_ion_intens
-from util.tab2.plots import logo_of_fraction
+from .util.tab2.plots import common_type_hist
+from .util.tab2.plots import common_type_pie
+from .util.tab2.plots import mz_dist_ion_type
+from .util.tab2.plots import rel_ion_intens_perc
+from .util.tab2.plots import rel_ion_intens_ridge
+from .util.tab2.plots import per_spec_ion_type
+from .util.tab2.plots import per_spec_ion_intens
+from .util.tab2.plots import logo_of_fraction
 
-from util.constants import DIV_COLOR
+from .util.constants import DIV_COLOR
 
 
 def main(argv=None) -> None:

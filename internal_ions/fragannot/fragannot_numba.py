@@ -7,14 +7,15 @@ from pyteomics import parser
 import ms_deisotope
 
 # type hinting
-from typing import List, Dict, Any, BinaryIO
+from typing import List, Dict, Any
 from psm_utils.psm_list import PSMList
-
-from . import constant
+from ..util.spectrumio import SpectrumFile
+from ..util import constants
 from .parser import Parser as Parser
 
 from numba import jit
-from numba.typed import List as numbaList
+from numba import typed
+from numba.core import types
 
 import multiprocessing
 from joblib import Parallel, delayed
@@ -29,7 +30,7 @@ class FragannotNumba:
     def fragment_annotation(
             self,
             psms: PSMList,
-            spectra_file: BinaryIO,
+            spectra_file: SpectrumFile,
             tolerance: float,
             fragment_types: List[str],
             charges: List[str],
@@ -45,7 +46,7 @@ class FragannotNumba:
 # set micro batching and batch params here
 def fragment_annotation(
         psms: PSMList,
-        spectra_file: BinaryIO,
+        spectra_file: SpectrumFile,
         tolerance: float,
         fragment_types: List[str],
         charges: List[str] | str,
@@ -60,12 +61,12 @@ def fragment_annotation(
 
     Parameters:
     ----------
-    ident_file : BinaryIO
-    spectra_file : BinaryIO
+    psms : PSMList
+    spectra_file : SpectrumFile
     tolerance : float
         Tolerance value in ppm for fragment matching
     fragment_types : list
-        List of fragment types (fragment type must be defined in constant.py ion_cap_formula)
+        List of fragment types (fragment type must be defined in constants.py ion_cap_formula)
     charges : list
         List of charges (e.g ["+1", "-2"])
     losses : list
@@ -154,11 +155,15 @@ def calculate_ions_for_psms(psm,
     else:
         charges_used = charges
 
+    ion_directions = typed.Dict.empty(key_type=types.unicode_type, value_type=types.unicode_type)
+    ion_directions.update(constants.ion_direction)
+
     theoretical_fragment_code = compute_theoretical_fragments(
         sequence_length=len(psm.peptidoform.sequence),
-        fragment_types=numbaList(fragment_types),
-        charges=numbaList([int(c) for c in charges_used]),
-        neutral_losses=numbaList(losses),
+        fragment_types=typed.List(fragment_types),
+        charges=typed.List([int(c) for c in charges_used]),
+        neutral_losses=typed.List(losses),
+        ion_directions=ion_directions,
         internal=True
     )
 
@@ -209,23 +214,8 @@ def compute_theoretical_fragments(
         fragment_types: List[str],
         charges: List[int] = [1],
         neutral_losses: List[str] = [],
+        ion_directions: Dict[str, str] = {},
         internal: bool = True) -> List[str]:
-
-    # ion_directions = constant.ion_direction
-    ion_directions = {
-        "a": "n-term",
-        "b": "n-term",
-        "x": "c-term",
-        "y": "c-term",
-        "cdot": "n-term",
-        "c": "n-term",
-        "c-1": "n-term",
-        "c+1": "n-term",
-        "zdot": "c-term",
-        "z+1": "c-term",
-        "z+2": "c-term",
-        "z+3": "c-term",
-    }
 
     n_term_ions = [ion_type for ion_type in fragment_types if ion_directions[ion_type] == "n-term"]
     c_term_ions = [ion_type for ion_type in fragment_types if ion_directions[ion_type] == "c-term"]
@@ -315,9 +305,9 @@ def theoretical_mass_to_charge(fragment_code: str, peptidoform) -> float:
     # mass modifications
     M = sum(mods)
     # mass start ion cap
-    SI = constant.ion_cap_delta_mass[ion_cap_start]
+    SI = constants.ion_cap_delta_mass[ion_cap_start]
     # mass end ion cap
-    EI = constant.ion_cap_delta_mass[ion_cap_end]
+    EI = constants.ion_cap_delta_mass[ion_cap_end]
     # hydrogen mass
     H = 1.00784
     # loss mass

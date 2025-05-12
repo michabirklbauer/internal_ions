@@ -1,10 +1,9 @@
 from psm_utils.psm_list import PSMList
-from typing import BinaryIO
 import logging
 import logging.config
 import os
 from collections import Counter
-from .spectrumfile import SpectrumFile
+from ..util.spectrumio import SpectrumFile
 
 RANK_LIMIT = 1  # maximum PSM rank allowed
 HIT_LIMIT = 1  # actual max number of PSMs per spectrum allowed (sometimes there are many PSMs with the same rank)
@@ -18,8 +17,8 @@ class Parser:
         self.psm_list = psm_list
         self.is_streamlit = is_streamlit
 
-    def read(self, raw_file: BinaryIO, max_rank=RANK_LIMIT, max_hits=HIT_LIMIT):
-        self.__load(raw_file)
+    def read(self, raw_file: SpectrumFile, max_rank=RANK_LIMIT, max_hits=HIT_LIMIT):
+        self.spectra = raw_file
         self.logger.info(f"Read {len(self.psm_list)} PSMs from identification file")
         if self.is_streamlit:
             print(f"Read {len(self.psm_list)} PSMs from identification file")
@@ -45,9 +44,6 @@ class Parser:
         output_fpath = os.path.splitext(raw_file.name)[0] + ".json"
         self.output_fname = os.path.basename(output_fpath)
         return self.psm_list
-
-    def __load(self, raw_file: BinaryIO):
-        self.spectra = self.__read_raw_file(raw_file)
 
     def __read_raw_file(self, file):
         return SpectrumFile(file)

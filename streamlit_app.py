@@ -5,14 +5,10 @@ import streamlit as st
 import logging
 
 # import tabs
-from tab1 import main as tab1_main
-from tab2 import main as tab2_main
-from tab3 import main as tab3_main
-from tab4 import main as tab4_main
+from internal_ions import tab1, tab2, tab3, tab4
 
 # import constants
-from util.constants import REPO_NAME
-from util.constants import DIV_COLOR
+from internal_ions.util.constants import REPO_NAME, DIV_COLOR
 
 
 # main page content
@@ -21,19 +17,19 @@ def main_page():
     st.title("Internal Ions Explorer")
 
     # set tab names here
-    tab1, tab2, tab3, tab4 = st.tabs(["Data Import & Annotation", "Statistics", "Fraggraph", "Documentation"])
+    t1, t2, t3, t4 = st.tabs(["Data Import & Annotation", "Statistics", "Fraggraph", "Documentation"])
 
-    with tab1:
-        tab1_main()
+    with t1:
+        tab1.main()
 
-    with tab2:
-        tab2_main()
+    with t2:
+        tab2.main()
 
-    with tab3:
-        tab3_main()
+    with t3:
+        tab3.main()
 
-    with tab4:
-        tab4_main()
+    with t4:
+        tab4.main()
 
 
 # side bar and main page loader
