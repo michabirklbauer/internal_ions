@@ -8,6 +8,7 @@ import ms_deisotope
 
 # type hinting
 from typing import List, Dict, Any, BinaryIO
+from psm_utils.psm_list import PSMList
 
 from . import constant
 from .parser import Parser as Parser
@@ -27,30 +28,28 @@ class FragannotNumba:
 
     def fragment_annotation(
             self,
-            ident_file: BinaryIO,
+            psms: PSMList,
             spectra_file: BinaryIO,
             tolerance: float,
             fragment_types: List[str],
             charges: List[str],
             losses: List[str],
-            file_format: str,
             deisotope: bool,
             write_file: bool = True) -> List[Dict[str, Any]]:
 
-        return fragment_annotation(ident_file, spectra_file, tolerance,
-                                   fragment_types, charges, losses, file_format,
+        return fragment_annotation(psms, spectra_file, tolerance,
+                                   fragment_types, charges, losses,
                                    deisotope, write_file, self.nr_used_cores)
 
 
 # set micro batching and batch params here
 def fragment_annotation(
-        ident_file: BinaryIO,
+        psms: PSMList,
         spectra_file: BinaryIO,
         tolerance: float,
         fragment_types: List[str],
         charges: List[str] | str,
         losses: List[str],
-        file_format: str,
         deisotope: bool,
         write_file: bool = True,
         nr_used_cores: int = 1,
@@ -81,9 +80,9 @@ def fragment_annotation(
 
     print("Fragannot running using " + str(nr_used_cores) + " logical cores.\n")
 
-    P = Parser(is_streamlit=True)
+    P = Parser(psms, is_streamlit=True)
 
-    all_psms = P.read(spectra_file, ident_file, file_format=file_format)
+    all_psms = P.read(spectra_file)
     # construct list of psms with only one psm per spectrum
     psms = list()
     # construct dict of psms mapping spectrum_id to nr_idents_with_same_rank

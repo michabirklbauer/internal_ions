@@ -1,10 +1,9 @@
-from psm_utils.io import read_file
+from psm_utils.psm_list import PSMList
 from typing import BinaryIO
 import logging
 import logging.config
 import os
 from collections import Counter
-from tempfile import NamedTemporaryFile
 from .spectrumfile import SpectrumFile
 
 RANK_LIMIT = 1  # maximum PSM rank allowed
@@ -12,15 +11,15 @@ HIT_LIMIT = 1  # actual max number of PSMs per spectrum allowed (sometimes there
 
 
 class Parser:
-    def __init__(self, is_streamlit: bool = False):
+    def __init__(self, psm_list: PSMList, is_streamlit: bool = False):
         # Set up logging
         self.logger = logging.getLogger(__name__)
         self.spectra = None
-        self.psm_list = None
+        self.psm_list = psm_list
         self.is_streamlit = is_streamlit
 
-    def read(self, raw_file: BinaryIO, ident_file: BinaryIO, file_format: str, max_rank=RANK_LIMIT, max_hits=HIT_LIMIT):
-        self.__load(raw_file, ident_file, file_format)
+    def read(self, raw_file: BinaryIO, max_rank=RANK_LIMIT, max_hits=HIT_LIMIT):
+        self.__load(raw_file)
         self.logger.info(f"Read {len(self.psm_list)} PSMs from identification file")
         if self.is_streamlit:
             print(f"Read {len(self.psm_list)} PSMs from identification file")
@@ -28,7 +27,7 @@ class Parser:
         count = 0
         spec_counts = Counter()
         for psm in self.psm_list:
-            if getattr(psm, 'rank', 1) <= max_rank:
+            if (psm.rank or 1) <= max_rank:
                 try:
                     spectrum = self.spectra.get_by_id(psm["spectrum_id"])
                 except KeyError:
@@ -47,14 +46,8 @@ class Parser:
         self.output_fname = os.path.basename(output_fpath)
         return self.psm_list
 
-    def __load(self, raw_file: BinaryIO, ident_file: BinaryIO, file_format: str):
+    def __load(self, raw_file: BinaryIO):
         self.spectra = self.__read_raw_file(raw_file)
-        self.psm_list = self.__read_id_file(ident_file, file_format)
 
     def __read_raw_file(self, file):
         return SpectrumFile(file)
-
-    def __read_id_file(self, ident_file, file_format):
-        with NamedTemporaryFile() as f:
-            f.write(ident_file.getbuffer())
-            return read_file(f.name, filetype=file_format)

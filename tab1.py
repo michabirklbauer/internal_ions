@@ -7,7 +7,7 @@ from fragannot.fragannot_call import fragannot_call
 from util.converter import JSONConverter
 from util.redirect import st_stdout
 from util.spectrumio import read_spectra
-from util.psmio import read_identifications
+from util.psmio import read_identifications, read_id_file
 from util.streamlit_utils import dataframe_to_csv_stream
 
 from util.constants import DIV_COLOR
@@ -65,20 +65,13 @@ def main(argv=None) -> None:
 
     if identifications_file is not None and identifications_file_format is not None:
         with st.status("Reading identifications...") as identifications_reading_status:
+            psm_list = read_id_file(identifications_file, identifications_file_format)
             with st_stdout("info"):
                 if "identifications" not in st.session_state:
-                    st.session_state["identifications"] = read_identifications(
-                        identifications_file,
-                        identifications_file_format,
-                        identifications_file.name,
-                        spectrum_file)
+                    st.session_state["identifications"] = read_identifications(psm_list, identifications_file.name, spectrum_file)
                     st.session_state["rerun_identifications_reading"] = False
                 if "identifications" in st.session_state and st.session_state["rerun_identifications_reading"]:
-                    st.session_state["identifications"] = read_identifications(
-                        identifications_file,
-                        identifications_file_format,
-                        identifications_file.name,
-                        spectrum_file)
+                    st.session_state["identifications"] = read_identifications(psm_list, identifications_file.name, spectrum_file)
                     st.session_state["rerun_identifications_reading"] = False
             st.success("Read all identifications successfully!")
             identifications_reading_status.update(label=f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state="complete")
@@ -125,13 +118,12 @@ def main(argv=None) -> None:
                 with st_stdout("info"):
                     try:
                         result = fragannot_call(spectrum_file,
-                                                st.session_state.identifications_file,
+                                                psm_list,
                                                 float(st.session_state.tolerance),
                                                 st.session_state["fragannot_call_ion_selection"],
                                                 st.session_state["charges"],
                                                 st.session_state["losses"],
-                                                st.session_state.deisotope,
-                                                st.session_state.identifications_file_format)
+                                                st.session_state.deisotope)
 
                         converter = JSONConverter()
                         st.session_state["result"] = result

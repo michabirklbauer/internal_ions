@@ -34,9 +34,10 @@ class SpectrumFile:
                     scans[spec['params']['scans']] += 1
                 if 'title' in spec['params']:
                     titles[spec['params']['title']] += 1
-        use_scans = len(scans) > len(titles)
+        use_scans = len(scans) >= len(titles)
+        # TODO: indexing by both scans and titles is probably necessary
         if max(len(scans), len(titles)) < i + 1:
-            self.logger.warning("Not all spectra can be indexed in %s: %d scans, %d titles", file, len(scans), len(titles))
+            self.logger.warning("Not all spectra can be indexed in %s: %d scans, %d titles, %d spectra", file, len(scans), len(titles), i + 1)
         return use_scans
 
     def _load(self, uploaded_file):
@@ -51,9 +52,7 @@ class SpectrumFile:
             self.index = self.spectra_source.index
 
         else:
-            self.logger.info(
-                f"Cannot infer format from {uploaded_file}, only mzML and MGF formats are supported"
-            )
+            self.logger.error("Cannot infer format from %s, only MGF format is supported", uploaded_file.name)
             raise Exception("Unsupported spectra file format")
 
         self.logger.info(f"Loaded a SpectrumFile with {len(self.spectra_source)} spectra.")

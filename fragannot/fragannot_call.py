@@ -3,26 +3,25 @@ from .fragannot_numba import FragannotNumba
 from typing import Dict
 from typing import List
 from typing import BinaryIO
+from psm_utils.psm_list import PSMList
 
 
 def fragannot_call(spectrum_file: BinaryIO,
-                   identifications_file: BinaryIO,
+                   psms: PSMList,
                    tolerance: float,
                    fragment_types: List[str],
                    charges: List[str],
                    losses: List[str],
                    deisotope: bool,
-                   file_format: str = "infer",
                    verbose: bool = False) -> Dict:
 
     frag = FragannotNumba()
-    fragannot_dict = frag.fragment_annotation(identifications_file,
+    fragannot_dict = frag.fragment_annotation(psms,
                                               spectrum_file,
                                               tolerance,
                                               fragment_types,
                                               charges,
                                               losses,
-                                              file_format,
                                               deisotope,
                                               write_file=False)
 

@@ -1,15 +1,11 @@
-import os
-import shutil
-import random
-from datetime import datetime
-from psm_utils import io as psm_io
-
+from psm_utils.io import read_file
+from psm_utils.psm_list import PSMList
+from tempfile import NamedTemporaryFile
 from typing import Dict, BinaryIO
 from fragannot.spectrumfile import SpectrumFile
 
 
-def read_identifications(filename: str | BinaryIO,
-                         filetype: str,
+def read_identifications(psms: PSMList,
                          name: str,
                          spec_file: str | BinaryIO,
                          verbose: bool = False) -> Dict[str, Dict]:
@@ -19,23 +15,6 @@ def read_identifications(filename: str | BinaryIO,
          "proteins": Dict[str, Set[int]],
          "peptides": Dict[str, Set[int]]
     """
-
-    if isinstance(filename, str):
-        psms = psm_io.read_file(filename, filetype=filetype)
-    else:
-        tmp_dir_name = "tmp_fragannot_files_471635739"
-        if os.path.exists(tmp_dir_name) and os.path.isdir(tmp_dir_name):
-            shutil.rmtree(tmp_dir_name)
-        os.makedirs(tmp_dir_name)
-        output_name_prefix = tmp_dir_name + "/" + datetime.now().strftime("%b-%d-%Y_%H-%M-%S") + "_" + str(random.randint(10000, 99999))
-        with open(output_name_prefix + filename.name, "wb") as f:
-            f.write(filename.getbuffer())
-        psms = psm_io.read_file(output_name_prefix + filename.name, filetype=filetype)
-        try:
-            os.remove(output_name_prefix + filename.name)
-        except Exception:
-            if verbose:
-                print("Could not remove file: " + output_name_prefix + filename.name)
     if len(psms) == 0:
         print("Error: Couldn't read identifications file!")
         return {"name": name, "proteins": dict(), "peptides": dict()}
@@ -91,3 +70,9 @@ def read_identifications(filename: str | BinaryIO,
             # "scannr_to_peptidoforms": scannr_to_peptidoforms,
             "peptide_to_peptidoforms": peptide_to_peptidoforms,
             "proteins_to_peptides": proteins_to_peptides}
+
+
+def read_id_file(ident_file, file_format):
+    with NamedTemporaryFile() as f:
+        f.write(ident_file.getbuffer())
+        return read_file(f.name, filetype=file_format)
