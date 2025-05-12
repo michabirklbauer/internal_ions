@@ -44,6 +44,3 @@ class Parser:
         output_fpath = os.path.splitext(raw_file.name)[0] + ".json"
         self.output_fname = os.path.basename(output_fpath)
         return self.psm_list
-
-    def __read_raw_file(self, file):
-        return SpectrumFile(file)
