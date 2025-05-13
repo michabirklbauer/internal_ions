@@ -6,7 +6,7 @@ from .fragannot.fragannot_call import fragannot_call
 
 from .util.converter import JSONConverter
 from .util.redirect import st_stdout
-from .util.spectrumio import read_spectra, read_spectrum_file
+from .util.spectrumio import read_spectrum_file
 from .util.psmio import read_identifications, read_id_file
 from .util.streamlit_utils import dataframe_to_csv_stream
 
@@ -32,7 +32,6 @@ def main(argv=None) -> None:
         with st.status("Reading spectra...") as spectra_reading_status:
             with st_stdout("info"):
                 spectrum_file = read_spectrum_file(uploaded_spectrum_file)
-                # spectra = read_spectra(spectrum_file)
             st.success("Read all spectra successfully!")
             spectra_reading_status.update(label=f"Read all spectra from file {uploaded_spectrum_file.name} successfully!", state="complete")
 
@@ -54,10 +53,6 @@ def main(argv=None) -> None:
             with st_stdout("info"):
                 if "identifications" not in st.session_state:
                     st.session_state["identifications"] = read_identifications(psm_list, identifications_file.name, spectrum_file)
-                    st.session_state["rerun_identifications_reading"] = False
-                if "identifications" in st.session_state and st.session_state["rerun_identifications_reading"]:
-                    st.session_state["identifications"] = read_identifications(psm_list, identifications_file.name, spectrum_file)
-                    st.session_state["rerun_identifications_reading"] = False
             st.success("Read all identifications successfully!")
             identifications_reading_status.update(label=f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state="complete")
 
