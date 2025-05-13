@@ -75,6 +75,8 @@ def read_identifications(psms: PSMList,
 
 @st.cache_data
 def read_id_file(ident_file, file_format):
-    with NamedTemporaryFile(suffix=os.path.splitext(ident_file.name)[1]) as f:
+    # close the temp file before reading it with psm_utils to avoid permission error on Windows
+    with NamedTemporaryFile(suffix=os.path.splitext(ident_file.name)[1], delete_on_close=False) as f:
         f.write(ident_file.getbuffer())
+        f.close()
         return read_file(f.name, filetype=file_format)
