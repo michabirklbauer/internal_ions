@@ -1,24 +1,10 @@
 # Dockerfile for Internal Ion Explorer
 # author: Micha Birklbauer
-# version: 1.2.1
+# version: 1.2.2
 
-FROM ubuntu:24.04
+FROM python:3.12
 
 LABEL maintainer="micha.birklbauer@gmail.com"
-
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y gnupg gnupg1 gnupg2 software-properties-common
-RUN apt-get update && apt-get install -y \
-    curl \
-    git \
-    python3-lxml \
-    python3-pip \
-    python3-venv \
-    python3-setuptools \
-    libglib2.0-0 \
-    libsm6 \
-    libxrender1 \
-    libxext6
 
 RUN mkdir internal_ions
 COPY ./ internal_ions/
@@ -28,6 +14,6 @@ RUN python3 -m venv venv && \
     . venv/bin/activate && \
     pip install --upgrade pip && \
     pip install --upgrade setuptools && \
-    pip install -r env.txt
+    pip install --no-cache-dir -r env.txt
 
 CMD  ["sh", "-c", ". venv/bin/activate && streamlit run streamlit_app.py"]
