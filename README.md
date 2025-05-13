@@ -2,7 +2,7 @@
 
 ## Setup
 
-- Requirements: **python 3.11+!**
+- Requirements: **python 3.12+!**
 - Packages: `pip install -r requirements.txt`
 - Packages (alternative, exact version numbers): `pip install -r env.txt`
 
