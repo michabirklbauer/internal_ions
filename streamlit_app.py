@@ -76,8 +76,8 @@ def main(argv=None) -> None:
                        format_func=lambda x: fions_nterm_mapping[x],
                        key="selected_ions_nterm",
                        help="The c-terminal ions considered by Fragannot and Fraggraph.")
-        fions_cterm_choices = ["x", "y", "zdot", "z+1", "z+2", "z+3"]
-        fions_cterm_mapping = {"x": "X ions", "y": "Y ions", "zdot": "Zdot ions",
+        fions_cterm_choices = ["x", "y", "z", "zdot", "z+1", "z+2", "z+3"]
+        fions_cterm_mapping = {"x": "X ions", "y": "Y ions", "z": "Z ions", "zdot": "Zdot ions",
                                "z+1": "Z+1 ions", "z+2": "Z+2 ions", "z+3": "Z+3 ions"}
         st.multiselect("Select which c-terminal ions to consider:",
                        options=fions_cterm_choices,

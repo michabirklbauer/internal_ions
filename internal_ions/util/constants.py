@@ -5,7 +5,7 @@ SUPPORTED_FILETYPES = list(FILETYPES)
 
 REPO_NAME = "internal_ions"
 DIV_COLOR = "rainbow"
-FRAGANNOT_ION_NAMES = ["a", "b", "c", "cdot", "c-1", "c+1", "x", "y", "zdot", "z+1", "z+2", "z+3"]
+FRAGANNOT_ION_NAMES = ["a", "b", "c", "cdot", "c-1", "c+1", "x", "y", "z", "zdot", "z+1", "z+2", "z+3"]
 
 ion_comp = mass.std_ion_comp.copy()
 for k in list(ion_comp):
@@ -27,6 +27,7 @@ ion_direction = {
     "c-1": "n-term",
     "c+1": "n-term",
     "zdot": "c-term",
+    "z": "c-term",
     "z+1": "c-term",
     "z+2": "c-term",
     "z+3": "c-term",
