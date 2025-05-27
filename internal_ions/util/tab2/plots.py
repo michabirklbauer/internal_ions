@@ -12,9 +12,7 @@ DEFAULT_MARGIN = dict(t=0, b=0, l=0, r=0, pad=0)
 
 def common_type_gen(fragments_dataframe: pd.DataFrame) -> pd.Series:
     common_type = fragments_dataframe["frag_type1"].astype(str).str.cat(fragments_dataframe["frag_type2"], sep="-")
-    common_type = common_type.replace("n", "not annotated", regex=True)
-    common_type = common_type.replace("t-", "", regex=True)
-    common_type = common_type.replace("-t", "", regex=True)
+    common_type = common_type.str.replace("n", "not annotated", regex=True).str.replace("^t-", "", regex=True).str.replace("-t$", "", regex=True)
     fragments_dataframe["frag_types"] = common_type
     return common_type
 
@@ -23,6 +21,7 @@ def common_type_hist(fragments_dataframe: pd.DataFrame) -> go.Figure:
     common_type = common_type_gen(fragments_dataframe)
     fig = go.Figure([go.Histogram(x=common_type)])
     fig.update_layout(margin=DEFAULT_MARGIN)
+    fig.update_xaxes(type="category", categoryorder="category ascending")
     return fig
 
 
@@ -30,7 +29,7 @@ def common_type_pie(fragments_dataframe: pd.DataFrame) -> go.Figure:
     common_type = common_type_gen(fragments_dataframe)
     counts = common_type.value_counts()
 
-    pie_fig = go.Figure([go.Pie(labels=counts.keys(), values=counts)])
+    pie_fig = go.Figure([go.Pie(labels=sorted(counts.keys()), values=counts)])
     pie_fig.update_layout(margin=DEFAULT_MARGIN)
     return pie_fig
 
@@ -38,6 +37,7 @@ def common_type_pie(fragments_dataframe: pd.DataFrame) -> go.Figure:
 def fragments_hist_plotter(colname: str, xaxis_title: str, transform: Callable = lambda x: x):
     def func(fragments_dataframe: pd.DataFrame) -> go.Figure:
         types = fragments_dataframe["frag_types"].unique()
+        types.sort()
         histograms = list()
         for t in types:
             histograms.append(go.Histogram(x=transform(fragments_dataframe.loc[fragments_dataframe.frag_types == t, colname]),
@@ -78,7 +78,7 @@ per_spec_ion_intens = spectrum_hist_plotter("total_int_", "Intensity Percentage"
 def violin_plotter(colname, xaxis_title, transform: Callable = lambda x: x):
     def func(fragments_dataframe: pd.DataFrame) -> go.Figure:
         types = fragments_dataframe["frag_types"].unique()
-
+        types.sort()
         fig = go.Figure()
         for t in types:
             fig.add_trace(go.Violin(x=transform(fragments_dataframe.loc[fragments_dataframe.frag_types == t, colname]), name=t))
