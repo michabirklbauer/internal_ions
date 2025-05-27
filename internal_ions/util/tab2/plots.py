@@ -12,7 +12,7 @@ DEFAULT_MARGIN = dict(t=0, b=0, l=0, r=0, pad=0)
 
 def common_type_gen(fragments_dataframe: pd.DataFrame) -> pd.Series:
     common_type = fragments_dataframe["frag_type1"].astype(str).str.cat(fragments_dataframe["frag_type2"], sep="-")
-    common_type = common_type.str.replace("n", "not annotated", regex=True).str.replace("^t-", "", regex=True).str.replace("-t$", "", regex=True)
+    common_type = common_type.str.replace("n-n", "not annotated", regex=True).str.replace("^t-", "", regex=True).str.replace("-t$", "", regex=True)
     fragments_dataframe["frag_types"] = common_type
     return common_type
 
@@ -28,8 +28,8 @@ def common_type_hist(fragments_dataframe: pd.DataFrame) -> go.Figure:
 def common_type_pie(fragments_dataframe: pd.DataFrame) -> go.Figure:
     common_type = common_type_gen(fragments_dataframe)
     counts = common_type.value_counts()
-
-    pie_fig = go.Figure([go.Pie(labels=sorted(counts.keys()), values=counts)])
+    labels, values = zip(*sorted(zip(list(counts.keys()), list(counts))))
+    pie_fig = go.Figure([go.Pie(labels=labels, values=values, sort=False)])
     pie_fig.update_layout(margin=DEFAULT_MARGIN)
     return pie_fig
 
