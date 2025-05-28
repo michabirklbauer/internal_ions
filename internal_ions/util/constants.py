@@ -1,30 +1,21 @@
 from pyteomics import mass
 
-ion_cap_formula = {
-    "a": "H-2O-1" + "C-1O-1",
-    "b": "H-2O-1",
-    "x": "H-2O-1" + "CO2",
-    "y": "",
-    "c-1": "H-2O-1" + "NH3" + "H-1",
-    "c": "H-2O-1" + "NH3",
-    "cdot": "H-2O-1" + "NH3" + "H1",
-    "c+1": "H-2O-1" + "NH5",
-    "zdot": "H-2O-1" + "N-1" + "OH-1",
-    "z+1": "H-2O-1" + "N-1" + "O",
-    "z+2": "H-2O-1" + "N-1" + "OH",
-    "z+3": "H-2O-1" + "N-1" + "OH2",
-    "t": "",
-    "decoy_c1": "U-1",
-    "decoy_c2": "U-2",
-    "decoy_c3": "HU-2",
-    "decoy_n1": "U",
-    "decoy_n2": "U2",
-}
+from psm_utils.io import FILETYPES
+SUPPORTED_FILETYPES = list(FILETYPES)
+
+REPO_NAME = "internal_ions"
+DIV_COLOR = "rainbow"
+FRAGANNOT_ION_NAMES = ["a", "b", "c", "cdot", "c-1", "c+1", "x", "y", "z", "zdot", "z+1", "z+2", "z+3"]
+
+ion_comp = mass.std_ion_comp.copy()
+for k in list(ion_comp):
+    if k.endswith('dot'):
+        ion_comp[k.replace('-', '')] = ion_comp.pop(k)
+ion_comp['t'] = {}
 
 ion_cap_delta_mass = {
-    name: mass.calculate_mass(formula, absolute=False) for (name, formula) in ion_cap_formula.items()
+    name: mass.calculate_mass(composition=comp, absolute=False) for (name, comp) in ion_comp.items()
 }
-
 
 ion_direction = {
     "a": "n-term",
@@ -36,11 +27,10 @@ ion_direction = {
     "c-1": "n-term",
     "c+1": "n-term",
     "zdot": "c-term",
+    "z": "c-term",
     "z+1": "c-term",
     "z+2": "c-term",
     "z+3": "c-term",
-    "decoy_c": "c-term",
-    "decoy_n": "n-term",
 }
 
 

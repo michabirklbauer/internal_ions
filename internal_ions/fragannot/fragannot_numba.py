@@ -8,12 +8,14 @@ import ms_deisotope
 
 # type hinting
 from typing import List, Dict, Any
-
-from . import constant
+from psm_utils.psm_list import PSMList
+from ..util.spectrumio import SpectrumFile
+from ..util import constants
 from .parser import Parser as Parser
 
 from numba import jit
-from numba.typed import List as numbaList
+from numba import typed
+from numba.core import types
 
 import multiprocessing
 from joblib import Parallel, delayed
@@ -27,33 +29,29 @@ class FragannotNumba:
 
     def fragment_annotation(
             self,
-            ident_file: str,
-            spectra_file: str,
+            psms: PSMList,
+            spectra_file: SpectrumFile,
             tolerance: float,
             fragment_types: List[str],
             charges: List[str],
             losses: List[str],
-            file_format: str,
             deisotope: bool,
-            parser_pattern: str,
             write_file: bool = True) -> List[Dict[str, Any]]:
 
-        return fragment_annotation(ident_file, spectra_file, tolerance,
-                                   fragment_types, charges, losses, file_format,
-                                   deisotope, parser_pattern, write_file, self.nr_used_cores)
+        return fragment_annotation(psms, spectra_file, tolerance,
+                                   fragment_types, charges, losses,
+                                   deisotope, write_file, self.nr_used_cores)
 
 
 # set micro batching and batch params here
 def fragment_annotation(
-        ident_file: str,
-        spectra_file: str,
+        psms: PSMList,
+        spectra_file: SpectrumFile,
         tolerance: float,
         fragment_types: List[str],
         charges: List[str] | str,
         losses: List[str],
-        file_format: str,
         deisotope: bool,
-        parser_pattern: str,
         write_file: bool = True,
         nr_used_cores: int = 1,
         micro_batch: bool = True,
@@ -63,14 +61,12 @@ def fragment_annotation(
 
     Parameters:
     ----------
-    ident_file : str
-        Filename of an identification file
-    spectra_file : str
-        Filename of a spectra file
+    psms : PSMList
+    spectra_file : SpectrumFile
     tolerance : float
         Tolerance value in ppm for fragment matching
     fragment_types : list
-        List of fragment types (fragment type must be defined in constant.py ion_cap_formula)
+        List of fragment types (fragment type must be defined in constants.py ion_cap_formula)
     charges : list
         List of charges (e.g ["+1", "-2"])
     losses : list
@@ -85,9 +81,9 @@ def fragment_annotation(
 
     print("Fragannot running using " + str(nr_used_cores) + " logical cores.\n")
 
-    P = Parser(parser_pattern=parser_pattern, is_streamlit=True)
+    P = Parser(psms, is_streamlit=True)
 
-    all_psms = P.read(spectra_file, ident_file, file_format=file_format)
+    all_psms = P.read(spectra_file)
     # construct list of psms with only one psm per spectrum
     psms = list()
     # construct dict of psms mapping spectrum_id to nr_idents_with_same_rank
@@ -159,11 +155,15 @@ def calculate_ions_for_psms(psm,
     else:
         charges_used = charges
 
+    ion_directions = typed.Dict.empty(key_type=types.unicode_type, value_type=types.unicode_type)
+    ion_directions.update(constants.ion_direction)
+
     theoretical_fragment_code = compute_theoretical_fragments(
         sequence_length=len(psm.peptidoform.sequence),
-        fragment_types=numbaList(fragment_types),
-        charges=numbaList([int(c) for c in charges_used]),
-        neutral_losses=numbaList(losses),
+        fragment_types=typed.List(fragment_types),
+        charges=typed.List([int(c) for c in charges_used]),
+        neutral_losses=typed.List(losses),
+        ion_directions=ion_directions,
         internal=True
     )
 
@@ -176,7 +176,7 @@ def calculate_ions_for_psms(psm,
             psm.spectrum["mz"].tolist(), psm.spectrum["intensity"].tolist()
         )
     else:
-        mzs = psm.spectrum["mz"]
+        mzs = psm.spectrum["mz"].tolist()
         intensities = psm.spectrum["intensity"].tolist()
 
     annotation_mz, annotation_code, annotation_count = match_fragments(
@@ -214,23 +214,8 @@ def compute_theoretical_fragments(
         fragment_types: List[str],
         charges: List[int] = [1],
         neutral_losses: List[str] = [],
+        ion_directions: Dict[str, str] = {},
         internal: bool = True) -> List[str]:
-
-    # ion_directions = constant.ion_direction
-    ion_directions = {
-        "a": "n-term",
-        "b": "n-term",
-        "x": "c-term",
-        "y": "c-term",
-        "cdot": "n-term",
-        "c": "n-term",
-        "c-1": "n-term",
-        "c+1": "n-term",
-        "zdot": "c-term",
-        "z+1": "c-term",
-        "z+2": "c-term",
-        "z+3": "c-term",
-    }
 
     n_term_ions = [ion_type for ion_type in fragment_types if ion_directions[ion_type] == "n-term"]
     c_term_ions = [ion_type for ion_type in fragment_types if ion_directions[ion_type] == "c-term"]
@@ -320,9 +305,9 @@ def theoretical_mass_to_charge(fragment_code: str, peptidoform) -> float:
     # mass modifications
     M = sum(mods)
     # mass start ion cap
-    SI = constant.ion_cap_delta_mass[ion_cap_start]
+    SI = constants.ion_cap_delta_mass[ion_cap_start]
     # mass end ion cap
-    EI = constant.ion_cap_delta_mass[ion_cap_end]
+    EI = constants.ion_cap_delta_mass[ion_cap_end]
     # hydrogen mass
     H = 1.00784
     # loss mass

@@ -2,24 +2,15 @@ import json
 
 import streamlit as st
 
-from fragannot.fragannot_call import fragannot_call
+from .fragannot.fragannot_call import fragannot_call
 
-from util.converter import JSONConverter
-from util.redirect import st_stdout
-from util.spectrumio import read_spectra
-from util.psmio import read_identifications
-from util.streamlit_utils import dataframe_to_csv_stream
+from .util.converter import JSONConverter
+from .util.redirect import st_stdout
+from .util.spectrumio import read_spectrum_file
+from .util.psmio import read_identifications, read_id_file
+from .util.streamlit_utils import dataframe_to_csv_stream
 
-from util.constants import DIV_COLOR
-from util.constants import SUPPORTED_FILETYPES
-
-
-def reset_spectra() -> None:
-    st.session_state["rerun_spectra_reading"] = True
-
-
-def reset_identifications() -> None:
-    st.session_state["rerun_identifications_reading"] = True
+from .util.constants import DIV_COLOR, SUPPORTED_FILETYPES
 
 
 def main(argv=None) -> None:
@@ -31,59 +22,37 @@ def main(argv=None) -> None:
     ############################################################################
     st.subheader("Data Import", divider=DIV_COLOR)
 
-    spectrum_file = st.file_uploader("Upload a spectrum file (we assume all spectra are MS2-level):",
-                                     key="spectrum_file",
-                                     type=["mgf"],
-                                     on_change=reset_spectra,
-                                     help="Upload a spectrum file to be analyzed in .mgf format.")
+    uploaded_spectrum_file = st.file_uploader(
+        "Upload a spectrum file (we assume all spectra are MS2-level):",
+        key="uploaded_spectrum_file",
+        type=["mgf"],
+        help="Upload a spectrum file to be analyzed in .mgf format.")
 
-    if spectrum_file is not None:
+    if uploaded_spectrum_file is not None:
         with st.status("Reading spectra...") as spectra_reading_status:
             with st_stdout("info"):
-                if "spectra" not in st.session_state:
-                    st.session_state["spectra"] = read_spectra(spectrum_file,
-                                                               spectrum_file.name,
-                                                               st.session_state["mgf_parser_pattern"])
-                    st.session_state["rerun_spectra_reading"] = False
-                if "spectra" in st.session_state:
-                    if st.session_state["rerun_spectra_reading"]:
-                        st.session_state["spectra"] = read_spectra(spectrum_file,
-                                                                   spectrum_file.name,
-                                                                   st.session_state["mgf_parser_pattern"])
-                        st.session_state["rerun_spectra_reading"] = False
+                spectrum_file = read_spectrum_file(uploaded_spectrum_file)
             st.success("Read all spectra successfully!")
-            spectra_reading_status.update(label=f"Read all spectra from file {st.session_state.spectrum_file.name} successfully!", state="complete")
+            spectra_reading_status.update(label=f"Read all spectra from file {uploaded_spectrum_file.name} successfully!", state="complete")
 
     identifications_file = st.file_uploader("Upload an identification file:",
                                             key="identifications_file",
                                             type=None,  # ["mzid"],
-                                            on_change=reset_identifications,
                                             help="Upload a identification file that contains PSMs of the spectrum file in .mzid format.")
 
     identifications_file_format = st.selectbox("Select the file format of the identifications file:",
                                                key="identifications_file_format",
-                                               options=SUPPORTED_FILETYPES,
-                                               index=None,
-                                               on_change=reset_identifications,
+                                               options=['infer'] + SUPPORTED_FILETYPES,
+                                               index=0,
                                                placeholder="None selected!",
                                                help="Select the file format of the identifications file, supported options are based on psm_utils.")
 
     if identifications_file is not None and identifications_file_format is not None:
         with st.status("Reading identifications...") as identifications_reading_status:
+            psm_list = read_id_file(identifications_file, identifications_file_format)
             with st_stdout("info"):
                 if "identifications" not in st.session_state:
-                    st.session_state["identifications"] = read_identifications(identifications_file,
-                                                                               identifications_file_format,
-                                                                               identifications_file.name,
-                                                                               st.session_state["mgf_parser_pattern"])
-                    st.session_state["rerun_identifications_reading"] = False
-                if "identifications" in st.session_state:
-                    if st.session_state["rerun_identifications_reading"]:
-                        st.session_state["identifications"] = read_identifications(identifications_file,
-                                                                                   identifications_file_format,
-                                                                                   identifications_file.name,
-                                                                                   st.session_state["mgf_parser_pattern"])
-                        st.session_state["rerun_identifications_reading"] = False
+                    st.session_state["identifications"] = read_identifications(psm_list, identifications_file.name, spectrum_file)
             st.success("Read all identifications successfully!")
             identifications_reading_status.update(label=f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state="complete")
 
@@ -112,12 +81,12 @@ def main(argv=None) -> None:
                                  use_container_width=True)
 
     if run_analysis:
-        cond1 = st.session_state.spectrum_file is not None
+        cond1 = spectrum_file is not None
         cond2 = st.session_state.identifications_file is not None
         cond3 = st.session_state.identifications_file_format is not None
         if cond1 and cond2 and cond3:
             st.markdown("**Parameters:**")
-            run_info_str = f"\tSpectrum file name: {st.session_state.spectrum_file.name}\n" + \
+            run_info_str = f"\tSpectrum file name: {spectrum_file.name}\n" + \
                            f"\tIdentifications file name: {st.session_state.identifications_file.name}\n" + \
                            f"\tTolerance: {st.session_state.tolerance}\n" + \
                            f"\tSelected ions: {', '.join(st.session_state['fragannot_call_ion_selection'])}\n" + \
@@ -128,20 +97,18 @@ def main(argv=None) -> None:
             with st.status("Fragannot is running! Show logging info:") as st_status:
                 with st_stdout("info"):
                     try:
-                        result = fragannot_call(st.session_state.spectrum_file,
-                                                st.session_state.identifications_file,
+                        result = fragannot_call(spectrum_file,
+                                                psm_list,
                                                 float(st.session_state.tolerance),
                                                 st.session_state["fragannot_call_ion_selection"],
                                                 st.session_state["charges"],
                                                 st.session_state["losses"],
-                                                st.session_state.deisotope,
-                                                st.session_state["mgf_parser_pattern"],
-                                                st.session_state.identifications_file_format)
+                                                st.session_state.deisotope)
 
                         converter = JSONConverter()
                         st.session_state["result"] = result
                         st.session_state["dataframes"] = converter.to_dataframes(data=result)
-                        st.session_state["dataframes_source"] = {"spectrum_file": st.session_state.spectrum_file.name,
+                        st.session_state["dataframes_source"] = {"spectrum_file": spectrum_file.name,
                                                                  "identifications_file": st.session_state.identifications_file.name,
                                                                  "fragment_centric_csv": None,
                                                                  "spectrum_centric_csv": None}

@@ -1,28 +1,14 @@
-#!/usr/bin/env python3
-
-"""
-#####################################################
-##                                                 ##
-##            -- STREAMLIT MAIN APP --             ##
-##                                                 ##
-#####################################################
-"""
-
-__version__ = "0.0.3"
+__version__ = "0.0.4"
 
 import pandas as pd
 import streamlit as st
 import logging
 
 # import tabs
-from tab1 import main as tab1_main
-from tab2 import main as tab2_main
-from tab3 import main as tab3_main
-from tab4 import main as tab4_main
+from internal_ions import tab1, tab2, tab3, tab4
 
 # import constants
-from util.constants import REPO_NAME
-from util.constants import DIV_COLOR
+from internal_ions.util.constants import REPO_NAME, DIV_COLOR
 
 
 # main page content
@@ -30,72 +16,26 @@ def main_page():
 
     st.title("Internal Ions Explorer")
 
-    general_description = \
-    """
-    Description text.
-    """
-    st.markdown(general_description)
-
     # set tab names here
-    tab1, tab2, tab3, tab4 = st.tabs(["Data Import & Annotation", "Statistics", "Fraggraph", "Documentation"])
+    t1, t2, t3, t4 = st.tabs(["Data Import & Annotation", "Statistics", "Fraggraph", "Documentation"])
 
-    div = \
-    """
-    #####################################################
-    ##                                                 ##
-    ##                   -- TAB 1 --                   ##
-    ##                                                 ##
-    #####################################################
-    """
+    with t1:
+        tab1.main()
 
-    with tab1:
-        tab1_main()
+    with t2:
+        tab2.main()
 
-    div = \
-    """
-    #####################################################
-    ##                                                 ##
-    ##                   -- TAB 2 --                   ##
-    ##                                                 ##
-    #####################################################
-    """
+    with t3:
+        tab3.main()
 
-    with tab2:
-        tab2_main()
-
-    div =\
-    """
-    #####################################################
-    ##                                                 ##
-    ##                   -- TAB 3 --                   ##
-    ##                                                 ##
-    #####################################################
-    """
-
-    with tab3:
-        tab3_main()
-
-    div =\
-    """
-    #####################################################
-    ##                                                 ##
-    ##                   -- TAB 3 --                   ##
-    ##                                                 ##
-    #####################################################
-    """
-
-    with tab4:
-        tab4_main()
+    with t4:
+        tab4.main()
 
 
 # side bar and main page loader
 def main(argv=None) -> None:
 
-    about_str = \
-    """
-    Description text.
-    """ + \
-    f"\nThe server is running Fragment Explorer version {__version__}!"
+    about_str = f"The server is running Fragment Explorer version {__version__}!"
 
     st.set_page_config(page_title="Fragannot",
                        page_icon=":test_tube:",
@@ -118,13 +58,6 @@ def main(argv=None) -> None:
         st.subheader("Parameters", divider=DIV_COLOR)
         st.markdown("These parameters will be used globally across the internal ions explorer.")
 
-        # mgf parsing
-        st.markdown("**MGF Parsing**")
-        st.text_input("Regex pattern used for parsing scan numbers of spectra from the MGF file.",
-                      key="mgf_parser_pattern",
-                      value="\\.\\d+\\.",
-                      help="The regex pattern for parsing scan numbers of spectra from the MGF file.")
-
         # tolerance
         st.markdown("**Tolerance**")
         st.number_input("Tolerance in Da:",
@@ -143,8 +76,8 @@ def main(argv=None) -> None:
                        format_func=lambda x: fions_nterm_mapping[x],
                        key="selected_ions_nterm",
                        help="The c-terminal ions considered by Fragannot and Fraggraph.")
-        fions_cterm_choices = ["x", "y", "zdot", "z+1", "z+2", "z+3"]
-        fions_cterm_mapping = {"x": "X ions", "y": "Y ions", "zdot": "Zdot ions",
+        fions_cterm_choices = ["x", "y", "z", "zdot", "z+1", "z+2", "z+3"]
+        fions_cterm_mapping = {"x": "X ions", "y": "Y ions", "z": "Z ions", "zdot": "Zdot ions",
                                "z+1": "Z+1 ions", "z+2": "Z+2 ions", "z+3": "Z+3 ions"}
         st.multiselect("Select which c-terminal ions to consider:",
                        options=fions_cterm_choices,

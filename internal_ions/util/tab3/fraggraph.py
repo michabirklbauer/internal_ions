@@ -8,16 +8,16 @@ import streamlit.components.v1 as components
 
 # IMPORTANT: Some imports are function level because they require an active R
 # installation which will be checked on function call
-from fraggraph.combine_spectra import combine_spectra
-from fraggraph.frag_graph_fast import FragGraph
-from fraggraph.frag_graph_viz import draw_graph3 as draw_graph
+from ...fraggraph.combine_spectra import combine_spectra
+from ...fraggraph.frag_graph_fast import FragGraph
+from ...fraggraph.frag_graph_viz import draw_graph3 as draw_graph
 
-from util.redirect import st_stdout
-from util.tab3.plots import draw_fragment_coverage_matrix_plotly
-from util.tab3.plots import draw_fragment_coverage_matrix_difference_plotly
-from util.tab3.plots import draw_barplot_intensity_SDI
+from ...util.redirect import st_stdout
+from .plots import draw_fragment_coverage_matrix_plotly
+from .plots import draw_fragment_coverage_matrix_difference_plotly
+from .plots import draw_barplot_intensity_SDI
 
-from util.constants import DIV_COLOR
+from ...util.constants import DIV_COLOR
 
 
 def create_fraggraph(peptidoforms):

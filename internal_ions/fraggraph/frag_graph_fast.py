@@ -14,7 +14,7 @@ import plotly.graph_objects as go
 import networkx as nx
 from pyteomics import mass, parser as pyteomics_parser
 import brainpy as bp
-import fraggraph.constant as constant
+from ..util import constants
 import psm_utils
 from scipy.optimize import minimize
 from tqdm import tqdm
@@ -388,9 +388,9 @@ class FragGraph(nx.DiGraph):
         # mass modifications
         M = sum(mods)
         # mass start ion cap
-        SI = constant.ion_cap_delta_mass[start_ioncap]
+        SI = constants.ion_cap_delta_mass[start_ioncap]
         # mass end ion cap
-        EI = constant.ion_cap_delta_mass[end_ioncap]
+        EI = constants.ion_cap_delta_mass[end_ioncap]
         # hydrogen mass
         H = 1.00784
         # electron mass
@@ -1203,8 +1203,6 @@ class FragGraph(nx.DiGraph):
                             )
                 pbar.update(1)
 
-
-
     def compute_cosine_similarity(self):
         for node in self.nodes:
             # print("node", node)
@@ -1300,7 +1298,7 @@ class FragGraph(nx.DiGraph):
         for p in range(1, len(peptidoform.sequence)):
             for c in range(1, self.max_charge):
                 # check ion series direction:
-                if constant.ion_direction[ion_cap_type] == "n-term":
+                if constants.ion_direction[ion_cap_type] == "n-term":
                     # n-term ion series
                     mzs.append(
                         self.get_fragment_theoretical_mz(
@@ -1319,7 +1317,7 @@ class FragGraph(nx.DiGraph):
                             0, p, start_ioncap="t", end_ioncap=ion_cap_type, charge=c
                         )
                     )
-                elif constant.ion_direction[ion_cap_type] == "c-term":
+                elif constants.ion_direction[ion_cap_type] == "c-term":
                     # c-term ion series
                     mzs.append(
                         self.get_fragment_theoretical_mz(

@@ -4,7 +4,7 @@ from pyteomics import mgf
 
 import streamlit as st
 
-from util.capture import CaptureStdOut
+from .capture import CaptureStdOut
 
 from typing import Any, Dict
 
