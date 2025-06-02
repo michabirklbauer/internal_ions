@@ -31,7 +31,7 @@ def main(argv=None) -> None:
     if uploaded_spectrum_file is not None:
         with st.status("Reading spectra...") as spectra_reading_status:
             with st_stdout("info"):
-                spectrum_file = read_spectrum_file(uploaded_spectrum_file)
+                st.session_state.spectrum_file = read_spectrum_file(uploaded_spectrum_file)
             st.success("Read all spectra successfully!")
             spectra_reading_status.update(label=f"Read all spectra from file {uploaded_spectrum_file.name} successfully!", state="complete")
 
@@ -43,18 +43,21 @@ def main(argv=None) -> None:
     identifications_file_format = st.selectbox("Select the file format of the identifications file:",
                                                key="identifications_file_format",
                                                options=['infer'] + SUPPORTED_FILETYPES,
-                                               index=0,
+                                               index=None,
                                                placeholder="None selected!",
                                                help="Select the file format of the identifications file, supported options are based on psm_utils.")
 
     if identifications_file is not None and identifications_file_format is not None:
-        with st.status("Reading identifications...") as identifications_reading_status:
-            psm_list = read_id_file(identifications_file, identifications_file_format)
-            with st_stdout("info"):
-                if "identifications" not in st.session_state:
-                    st.session_state["identifications"] = read_identifications(psm_list, identifications_file.name, spectrum_file)
-            st.success("Read all identifications successfully!")
-            identifications_reading_status.update(label=f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state="complete")
+        if "spectrum_file" in st.session_state and st.session_state.spectrum_file is not None:
+            with st.status("Reading identifications...") as identifications_reading_status:
+                psm_list = read_id_file(identifications_file, identifications_file_format)
+                with st_stdout("info"):
+                    if "identifications" not in st.session_state:
+                        st.session_state["identifications"] = read_identifications(psm_list, identifications_file.name, st.session_state.spectrum_file)
+                st.success("Read all identifications successfully!")
+                identifications_reading_status.update(label=f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state="complete")
+        else:
+            st.warning("Please upload a spectrum file before the identifications file!", icon="⚠️")
 
     st.session_state["fragannot_call_ion_selection"] = st.session_state["selected_ions_nterm"] + st.session_state["selected_ions_cterm"]
 
@@ -81,12 +84,12 @@ def main(argv=None) -> None:
                                  use_container_width=True)
 
     if run_analysis:
-        cond1 = spectrum_file is not None
+        cond1 = st.session_state.spectrum_file is not None
         cond2 = st.session_state.identifications_file is not None
         cond3 = st.session_state.identifications_file_format is not None
         if cond1 and cond2 and cond3:
             st.markdown("**Parameters:**")
-            run_info_str = f"\tSpectrum file name: {spectrum_file.name}\n" + \
+            run_info_str = f"\tSpectrum file name: {st.session_state.spectrum_file.name}\n" + \
                            f"\tIdentifications file name: {st.session_state.identifications_file.name}\n" + \
                            f"\tTolerance: {st.session_state.tolerance}\n" + \
                            f"\tSelected ions: {', '.join(st.session_state['fragannot_call_ion_selection'])}\n" + \
@@ -97,7 +100,7 @@ def main(argv=None) -> None:
             with st.status("Fragannot is running! Show logging info:") as st_status:
                 with st_stdout("info"):
                     try:
-                        result = fragannot_call(spectrum_file,
+                        result = fragannot_call(st.session_state.spectrum_file,
                                                 psm_list,
                                                 float(st.session_state.tolerance),
                                                 st.session_state["fragannot_call_ion_selection"],
@@ -108,7 +111,7 @@ def main(argv=None) -> None:
                         converter = JSONConverter()
                         st.session_state["result"] = result
                         st.session_state["dataframes"] = converter.to_dataframes(data=result)
-                        st.session_state["dataframes_source"] = {"spectrum_file": spectrum_file.name,
+                        st.session_state["dataframes_source"] = {"spectrum_file": st.session_state.spectrum_file.name,
                                                                  "identifications_file": st.session_state.identifications_file.name,
                                                                  "fragment_centric_csv": None,
                                                                  "spectrum_centric_csv": None}
