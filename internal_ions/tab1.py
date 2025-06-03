@@ -43,19 +43,24 @@ def main(argv=None) -> None:
     identifications_file_format = st.selectbox("Select the file format of the identifications file:",
                                                key="identifications_file_format",
                                                options=['infer'] + SUPPORTED_FILETYPES,
-                                               index=None,
+                                               index=0,
                                                placeholder="None selected!",
                                                help="Select the file format of the identifications file, supported options are based on psm_utils.")
 
     if identifications_file is not None and identifications_file_format is not None:
         if "spectrum_file" in st.session_state and st.session_state.spectrum_file is not None:
-            with st.status("Reading identifications...") as identifications_reading_status:
-                psm_list = read_id_file(identifications_file, identifications_file_format)
-                with st_stdout("info"):
-                    if "identifications" not in st.session_state:
-                        st.session_state["identifications"] = read_identifications(psm_list, identifications_file.name, st.session_state.spectrum_file)
-                st.success("Read all identifications successfully!")
-                identifications_reading_status.update(label=f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state="complete")
+            try:
+                with st.status("Reading identifications...") as identifications_reading_status:
+                    psm_list = read_id_file(identifications_file, identifications_file_format)
+                    with st_stdout("info"):
+                        if "identifications" not in st.session_state:
+                            st.session_state["identifications"] = read_identifications(psm_list, identifications_file.name, st.session_state.spectrum_file)
+                    st.success("Read all identifications successfully!")
+                    identifications_reading_status.update(label=f"Read all identifications from file {st.session_state.identifications_file.name} successfully!", state="complete")
+            except Exception as e:
+                st.warning("Something went wrong! If 'file format = infer' was selected please manually specify file format!", icon="⚠️")
+                with st.expander("Show exception"):
+                    st.exception(e)
         else:
             st.warning("Please upload a spectrum file before the identifications file!", icon="⚠️")
 
