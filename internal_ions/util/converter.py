@@ -253,7 +253,7 @@ class JSONConverter:
         intensities_single_aa = 0
 
         for i, frag in enumerate(fragments):
-            if frag is not None and "t" not in frag:
+            if frag is not None and "t:" not in frag and ":t" not in frag:
                 start, end, ion_cap_start, ion_cap_end, charge, formula = self.__parse_fragment_code(frag)
                 if start == end:
                     intensities_single_aa += intensities[i]
@@ -283,7 +283,7 @@ class JSONConverter:
         mapping = dict()
         for i, intensity in enumerate(intensities):
             # Add only the internal ions
-            if fragments[i] is not None and "t" not in fragments[i]:
+            if fragments[i] is not None and "t:" not in fragments[i] and ":t" not in fragments[i]:
                 mapping[intensity] = fragments[i]
 
         top_3_intensities = sorted(list(mapping.keys()), reverse=True)[:3]
@@ -327,7 +327,7 @@ class JSONConverter:
 
         for i, fragment in enumerate(fragments):
             if fragment is not None:
-                if "t" in fragment:
+                if "t:" in fragment or ":t" in fragment:
                     terminal += 1
                     total_int_terminal += intensities[i]
                 else:
