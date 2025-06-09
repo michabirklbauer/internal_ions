@@ -391,8 +391,8 @@ class JSONConverter:
 
         return positions
 
-    # @lru_cache(maxsize=10000)
     @staticmethod
+    @lru_cache(maxsize=10000)
     def _parse_fragment_code(fragment_code: str):
         """
         Parse the fragment code.
