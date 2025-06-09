@@ -21,6 +21,7 @@ class JSONConverter:
         dataframes[0].head()
         dataframes[1].head()
     """
+    fragment_code_pattern = re.compile(r"(?P<ion_cap_start>[^:]+):(?P<ion_cap_end>[^:]+)@(?P<start>[0-9]+):(?P<end>[0-9]+)\((?P<charge>(?:\+|\-)?[0-9]+)\)(\[(?P<formula>.*)\])?")
 
     def __init__(self, input: Union[str, BinaryIO] = None) -> None:
         """
@@ -181,7 +182,7 @@ class JSONConverter:
                     fragment["perc_of_total_intensity"].append(entry["annotation"]["intensity"][i] / total_intensity)
                     intensity_base_peak = max(entry["annotation"]["intensity"])
                     fragment["prop_intensity_to_base_peak"].append(entry["annotation"]["intensity"][i] / intensity_base_peak)
-                    fragment["modification"].append(self.__parse_modfication(entry["proforma"], start, end))
+                    fragment["modification"].append(self._parse_modfication(entry["proforma"], start, end))
                     fragment["spectrum_id"].append(self._get_spectrum_id(entry))
                     fragment["ambiguity"].append(self._get_ambiguity(entry["annotation"], i))
                     fragment["nr_idents_with_same_rank"].append(entry["nr_idents_with_same_rank"])
@@ -249,7 +250,7 @@ class JSONConverter:
         intensities_single_aa = 0
 
         for i, frag in enumerate(fragments):
-            if frag is not None and "t:" not in frag and ":t" not in frag:
+            if frag is not None:
                 start, end, ion_cap_start, ion_cap_end, charge, formula = self._parse_fragment_code(frag)
                 if start == end:
                     intensities_single_aa += intensities[i]
@@ -279,8 +280,10 @@ class JSONConverter:
         mapping = dict()
         for i, intensity in enumerate(intensities):
             # Add only the internal ions
-            if fragments[i] is not None and "t:" not in fragments[i] and ":t" not in fragments[i]:
-                mapping[intensity] = fragments[i]
+            if fragments[i] is not None:
+                start, end, ion_cap_start, ion_cap_end, charge, formula = self._parse_fragment_code(fragments[i])
+                if "t" not in (ion_cap_start, ion_cap_end):
+                    mapping[intensity] = fragments[i]
 
         top_3_intensities = sorted(list(mapping.keys()), reverse=True)[:3]
         top_3_codes = [mapping[intensity] for intensity in top_3_intensities]
@@ -323,7 +326,8 @@ class JSONConverter:
 
         for i, fragment in enumerate(fragments):
             if fragment is not None:
-                if "t:" in fragment or ":t" in fragment:
+                start, end, ion_cap_start, ion_cap_end, charge, formula = self._parse_fragment_code(fragment)
+                if "t" in (ion_cap_start, ion_cap_end):
                     terminal += 1
                     total_int_terminal += intensities[i]
                 else:
@@ -340,7 +344,7 @@ class JSONConverter:
                 "total_int_terminal": total_int_terminal,
                 "total_int_non": total_int_non}
 
-    def __parse_modfication(self, proforma: str, start: int, end: int) -> str:
+    def _parse_modfication(self, proforma: str, start: int, end: int) -> str:
         """
         Get modification string.
         """
@@ -387,7 +391,7 @@ class JSONConverter:
 
         return positions
 
-    @lru_cache(maxsize=10000)
+    # @lru_cache(maxsize=10000)
     @staticmethod
     def _parse_fragment_code(fragment_code: str):
         """
@@ -395,25 +399,10 @@ class JSONConverter:
         """
 
         # test if fragment code format is valid*
-        fragment_code_pattern = re.compile(r".+(:).+(@)[0-9]+(:)[0-9]+(\()(\+|\-)[0-9](\))(\[(.*?)\])?")
-        if not bool(fragment_code_pattern.match(fragment_code)):
+
+        try:
+            groups = JSONConverter.fragment_code_pattern.match(fragment_code).groupdict()
+        except AttributeError:
             raise RuntimeError("Incorrect fragment code format: {0}".format(fragment_code))
 
-        # Parse fragment code
-        start, end = [
-            int(i) for i in re.search(r"(?<=\@)(.*?)(?=\()", fragment_code).group(1).split(":")
-        ]
-        # Get start and end amino acid indexes
-        ion_cap_start, ion_cap_end = [
-            str(i) for i in re.search(r"^(.*?)(?=\@)", fragment_code).group(1).split(":")
-        ]
-        # Get start and end ion caps name
-        charge = int(re.search(r"(?<=\()(.*?)(?=\))", fragment_code).group(1))  # get charge state
-        formula = re.search(r"(?<=\[)(.*?)(?=\])", fragment_code)
-        if formula is None:
-            formula = ""
-        else:
-            formula = str(re.search(r"(?<=\[)(.*?)(?=\])", fragment_code).group(1))
-
-        print(fragment_code, start, end, ion_cap_start, ion_cap_end, charge, formula)
-        return start, end, ion_cap_start, ion_cap_end, charge, formula
+        return int(groups["start"]), int(groups["end"]), groups["ion_cap_start"], groups["ion_cap_end"], int(groups["charge"]), groups["formula"] or ""
