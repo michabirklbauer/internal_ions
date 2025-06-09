@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
-
 import os
 import re
 import json
 import pandas as pd
-from typing import List
-from typing import Dict
-from typing import Union
-from typing import BinaryIO
+from functools import lru_cache
+from typing import List, Dict, Union, BinaryIO
 
 __version = "1.0.0"
 __date = "2023-02-07"
@@ -165,11 +161,11 @@ class JSONConverter:
                     intensity_base_peak = max(entry["annotation"]["intensity"])
                     fragment["prop_intensity_to_base_peak"].append(entry["annotation"]["intensity"][i] / intensity_base_peak)
                     fragment["modification"].append("")
-                    fragment["spectrum_id"].append(self.__get_spectrum_id(entry))
-                    fragment["ambiguity"].append(self.__get_ambiguity(entry["annotation"], i))
+                    fragment["spectrum_id"].append(self._get_spectrum_id(entry))
+                    fragment["ambiguity"].append(self._get_ambiguity(entry["annotation"], i))
                     fragment["nr_idents_with_same_rank"].append(entry["nr_idents_with_same_rank"])
                 else:
-                    start, end, ion_cap_start, ion_cap_end, charge, formula = self.__parse_fragment_code(code)
+                    start, end, ion_cap_start, ion_cap_end, charge, formula = self._parse_fragment_code(code)
                     frag_seq = pep_seq[start - 1:end]
                     fragment["frag_code"].append(code)
                     fragment["frag_seq"].append(frag_seq)
@@ -186,36 +182,36 @@ class JSONConverter:
                     intensity_base_peak = max(entry["annotation"]["intensity"])
                     fragment["prop_intensity_to_base_peak"].append(entry["annotation"]["intensity"][i] / intensity_base_peak)
                     fragment["modification"].append(self.__parse_modfication(entry["proforma"], start, end))
-                    fragment["spectrum_id"].append(self.__get_spectrum_id(entry))
-                    fragment["ambiguity"].append(self.__get_ambiguity(entry["annotation"], i))
+                    fragment["spectrum_id"].append(self._get_spectrum_id(entry))
+                    fragment["ambiguity"].append(self._get_ambiguity(entry["annotation"], i))
                     fragment["nr_idents_with_same_rank"].append(entry["nr_idents_with_same_rank"])
 
             # Spectrum-centric
-            percentages_and_total_intensities = self.__calculate_internal_terminal_non_annotated_ions(entry["annotation"]["theoretical_code"], entry["annotation"]["intensity"])
+            percentages_and_total_intensities = self._calculate_internal_terminal_non_annotated_ions(entry["annotation"]["theoretical_code"], entry["annotation"]["intensity"])
             spectrum["perc_internal"].append(percentages_and_total_intensities["internal"])
             spectrum["perc_terminal"].append(percentages_and_total_intensities["terminal"])
             spectrum["perc_other"].append(percentages_and_total_intensities["non_annotated"])
             spectrum["total_int_internal"].append(percentages_and_total_intensities["total_int_internal"])
             spectrum["total_int_terminal"].append(percentages_and_total_intensities["total_int_terminal"])
             spectrum["total_int_other"].append(percentages_and_total_intensities["total_int_non"])
-            top_3 = self.__find_top3_most_intense_internal_ions(entry["annotation"]["theoretical_code"], entry["annotation"]["intensity"], pep_seq)
+            top_3 = self._find_top3_most_intense_internal_ions(entry["annotation"]["theoretical_code"], entry["annotation"]["intensity"], pep_seq)
             spectrum["top1_internal_ion_code"].append(top_3[0][0])
             spectrum["top1_internal_seq"].append(top_3[1][0])
             spectrum["top2_internal_ion_code"].append(top_3[0][1])
             spectrum["top2_internal_seq"].append(top_3[1][1])
             spectrum["top3_internal_ion_code"].append(top_3[0][2])
             spectrum["top3_internal_seq"].append(top_3[1][2])
-            spectrum["intensity_explained_aa"].append(self.__find_explained_by_aa(entry["annotation"]["theoretical_code"], entry["annotation"]["intensity"]))
-            spectrum["intensity_explained_precursor"].append(self.__find_explained_precursor(entry))
-            spectrum["spectrum_id"].append(self.__get_spectrum_id(entry))
-            spectrum["score"].append(self.__get_identification_score(entry))
+            spectrum["intensity_explained_aa"].append(self._find_explained_by_aa(entry["annotation"]["theoretical_code"], entry["annotation"]["intensity"]))
+            spectrum["intensity_explained_precursor"].append(self._find_explained_precursor(entry))
+            spectrum["spectrum_id"].append(self._get_spectrum_id(entry))
+            spectrum["score"].append(self._get_identification_score(entry))
             spectrum["peptide_seq"].append(pep_seq)
             spectrum["peptide_length"].append(len(pep_seq))
             spectrum["nr_idents_with_same_rank"].append(entry["nr_idents_with_same_rank"])
 
         return [pd.DataFrame(fragment), pd.DataFrame(spectrum)]
 
-    def __get_spectrum_id(self, entry: Dict) -> Union[int, float, str]:
+    def _get_spectrum_id(self, entry: Dict) -> Union[int, float, str]:
         """
         Get the spectrum ID if it exists.
         """
@@ -225,7 +221,7 @@ class JSONConverter:
         else:
             return ""
 
-    def __get_identification_score(self, entry: Dict) -> Union[int, float, str]:
+    def _get_identification_score(self, entry: Dict) -> Union[int, float, str]:
         """
         Get the identification score if it exists.
         """
@@ -235,7 +231,7 @@ class JSONConverter:
         else:
             return 0.0
 
-    def __get_ambiguity(self, entry_annotation: Dict, index: int) -> Union[int, float, str]:
+    def _get_ambiguity(self, entry_annotation: Dict, index: int) -> Union[int, float, str]:
         """
         Get the ambiguity if information is available.
         """
@@ -245,7 +241,7 @@ class JSONConverter:
         else:
             return -1
 
-    def __find_explained_by_aa(self, fragments: List[str], intensities: List[float]) -> float:
+    def _find_explained_by_aa(self, fragments: List[str], intensities: List[float]) -> float:
         """
         Calculate the explained intensity by single amino acids.
         """
@@ -254,13 +250,13 @@ class JSONConverter:
 
         for i, frag in enumerate(fragments):
             if frag is not None and "t:" not in frag and ":t" not in frag:
-                start, end, ion_cap_start, ion_cap_end, charge, formula = self.__parse_fragment_code(frag)
+                start, end, ion_cap_start, ion_cap_end, charge, formula = self._parse_fragment_code(frag)
                 if start == end:
                     intensities_single_aa += intensities[i]
 
         return intensities_single_aa / sum(intensities)
 
-    def __find_explained_precursor(self, entry: Dict) -> Union[int, float]:
+    def _find_explained_precursor(self, entry: Dict) -> Union[int, float]:
         """
         Calculate the explained intensity by the precursor.
         """
@@ -275,7 +271,7 @@ class JSONConverter:
 
         return -1
 
-    def __find_top3_most_intense_internal_ions(self, fragments: List[str], intensities: List[float], pep_seq: str) -> List[List[str]]:
+    def _find_top3_most_intense_internal_ions(self, fragments: List[str], intensities: List[float], pep_seq: str) -> List[List[str]]:
         """
         Get the top 3 most intense internal ions.
         """
@@ -292,7 +288,7 @@ class JSONConverter:
         top_3_sequences = []
 
         for code in top_3_codes:
-            start, end, ion_cap_start, ion_cap_end, charge, formula = self.__parse_fragment_code(code)
+            start, end, ion_cap_start, ion_cap_end, charge, formula = self._parse_fragment_code(code)
             top_3_sequences.append(pep_seq[start-1:end])
 
         if len(top_3_codes) < 3:
@@ -310,7 +306,7 @@ class JSONConverter:
 
         return [top_3_codes, top_3_sequences]
 
-    def __calculate_internal_terminal_non_annotated_ions(self, fragments: List[str], intensities: List[float]) -> Dict:
+    def _calculate_internal_terminal_non_annotated_ions(self, fragments: List[str], intensities: List[float]) -> Dict:
         """
         Calculate ion counts and frequencies.
         """
@@ -353,7 +349,7 @@ class JSONConverter:
         pattern = r"\[([\+?\-?A-Za-z0-9_\.?0-9]+)\]"
         mods = re.findall(pattern, proforma)
 
-        positions = self.__parse_modification_positions(proforma)
+        positions = self._parse_modification_positions(proforma)
 
         modifications = ""
 
@@ -364,7 +360,7 @@ class JSONConverter:
 
         return modifications.rstrip(";")
 
-    def __parse_modification_positions(self, seq: str) -> List[int]:
+    def _parse_modification_positions(self, seq: str) -> List[int]:
         """
         Get positions of the modifications.
         """
@@ -391,7 +387,9 @@ class JSONConverter:
 
         return positions
 
-    def __parse_fragment_code(self, fragment_code: str):
+    @lru_cache(maxsize=10000)
+    @staticmethod
+    def _parse_fragment_code(fragment_code: str):
         """
         Parse the fragment code.
         """
@@ -417,4 +415,5 @@ class JSONConverter:
         else:
             formula = str(re.search(r"(?<=\[)(.*?)(?=\])", fragment_code).group(1))
 
+        print(fragment_code, start, end, ion_cap_start, ion_cap_end, charge, formula)
         return start, end, ion_cap_start, ion_cap_end, charge, formula
