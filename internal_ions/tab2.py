@@ -94,9 +94,15 @@ def main(argv=None) -> None:
                 st.session_state["spec_center_filtered"], st.session_state["frag_center_filtered"] = filter_dataframe(tmp_spec, tmp_frag, 'spectrum')
 
             st.markdown("Data of the fragment-centric dataframe:")
-            st.dataframe(st.session_state["frag_center_filtered"], height=400, use_container_width=True)
+            if st.session_state["frag_center_filtered"].shape[0] == 0:
+                st.warning("No data to display! Make sure that filters and ion types are set correctly!")
+            else:
+                st.dataframe(st.session_state["frag_center_filtered"], height=400, use_container_width=True)
             st.markdown("Data of the spectrum-centric dataframe:")
-            st.dataframe(st.session_state["spec_center_filtered"], height=400, use_container_width=True)
+            if st.session_state["spec_center_filtered"].shape[0] == 0:
+                st.warning("No data to display! Make sure that filters and ion types are set correctly!")
+            else:
+                st.dataframe(st.session_state["spec_center_filtered"], height=400, use_container_width=True)
 
     ############################################################################
 
