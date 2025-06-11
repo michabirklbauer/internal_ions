@@ -357,14 +357,8 @@ class JSONConverter:
 
         positions = self._parse_modification_positions(proforma)
 
-        modifications = ""
-
         # Finds the positions of the modifications
-        for i, position in enumerate(positions):
-            if position >= start and position <= end:
-                modifications += mods[i] + ";"
-
-        return modifications.rstrip(";")
+        return "; ".join(f"{mods[i]} @ {position - start + 1}" for i, position in enumerate(positions) if position >= start and position <= end)
 
     def _parse_modification_positions(self, seq: str) -> List[int]:
         """
