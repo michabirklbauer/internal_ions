@@ -136,6 +136,7 @@ class JSONConverter:
                     "spectrum_id": [],
                     "score": [],
                     "peptide_seq": [],
+                    "proforma": [],
                     "peptide_length": [],
                     "nr_idents_with_same_rank": []}
 
@@ -207,6 +208,7 @@ class JSONConverter:
             spectrum["spectrum_id"].append(self._get_spectrum_id(entry))
             spectrum["score"].append(self._get_identification_score(entry))
             spectrum["peptide_seq"].append(pep_seq)
+            spectrum["proforma"].append(entry["proforma"])
             spectrum["peptide_length"].append(len(pep_seq))
             spectrum["nr_idents_with_same_rank"].append(entry["nr_idents_with_same_rank"])
 
@@ -355,14 +357,8 @@ class JSONConverter:
 
         positions = self._parse_modification_positions(proforma)
 
-        modifications = ""
-
         # Finds the positions of the modifications
-        for i, position in enumerate(positions):
-            if position >= start and position <= end:
-                modifications += mods[i] + ";"
-
-        return modifications.rstrip(";")
+        return "; ".join(f"{mods[i]} @ {position - start + 1}" for i, position in enumerate(positions) if position >= start and position <= end)
 
     def _parse_modification_positions(self, seq: str) -> List[int]:
         """
