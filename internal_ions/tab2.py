@@ -70,23 +70,9 @@ def main(argv=None) -> None:
             N_ion = st.checkbox("Show non-annotated fragments",
                                 value=False,
                                 help="Whether or not to show non-annotated fragments in the output.")
-            ion_filter_param = [N_ion,
-                                "a" in st.session_state["selected_ions_nterm"],
-                                "b" in st.session_state["selected_ions_nterm"],
-                                "c" in st.session_state["selected_ions_nterm"],
-                                "cdot" in st.session_state["selected_ions_nterm"],
-                                "c-1" in st.session_state["selected_ions_nterm"],
-                                "c+1" in st.session_state["selected_ions_nterm"],
-                                "x" in st.session_state["selected_ions_cterm"],
-                                "y" in st.session_state["selected_ions_cterm"],
-                                False,  # z ions, this is a relict
-                                "zdot" in st.session_state["selected_ions_cterm"],
-                                "z+1" in st.session_state["selected_ions_cterm"],
-                                "z+2" in st.session_state["selected_ions_cterm"],
-                                "z+3" in st.session_state["selected_ions_cterm"]]
 
             st.session_state["frag_center_filtered"], st.session_state["spec_center_filtered"] = filter_dataframes(
-                st.session_state["dataframes"], ion_filter_param)
+                st.session_state["dataframes"], N_ion)
 
             modify = st.checkbox("Filter data", value=False, help="Display filter options")
             if modify:
