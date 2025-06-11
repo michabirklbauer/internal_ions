@@ -126,6 +126,7 @@ def fragment_annotation(
         psms_dict[psm["spectrum_id"]]["spectrum_id"] = psm["spectrum_id"]
         psms_dict[psm["spectrum_id"]]["identification_score"] = psm["identification_score"]
         psms_dict[psm["spectrum_id"]]["rank"] = psm["rank"]
+        psms_dict[psm["spectrum_id"]]["alternative_annotations"] = psm["alternative_annotations"]
         # "precursor_charge": int(psm.get_precursor_charge()),
         psms_dict[psm["spectrum_id"]]["precursor_intensity"] = psm["precursor_intensity"]
 
@@ -179,7 +180,7 @@ def calculate_ions_for_psms(psm,
         mzs = psm.spectrum["mz"].tolist()
         intensities = psm.spectrum["intensity"].tolist()
 
-    annotation_mz, annotation_code, annotation_count = match_fragments(
+    annotation_mz, annotation_code, annotation_count, other_annotations = match_fragments(
         mzs, theoretical_fragment_dict, tolerance=tolerance)
 
     psm.spectrum["intensity"] = intensities
@@ -193,6 +194,7 @@ def calculate_ions_for_psms(psm,
             "annotation": psm.spectrum,
             "spectrum_id": psm.spectrum_id,
             "identification_score": psm.score,
+            "alternative_annotations": other_annotations,
             "rank": psm.rank,
             # "precursor_charge": int(psm.get_precursor_charge()),
             "precursor_intensity": 666}
@@ -225,18 +227,15 @@ def compute_theoretical_fragments(
 
     # terminal fragments
     n_term_frags = [
-        n_term_frag + "@1:" + str(i + 1) for n_term_frag in n_term for i in range(sequence_length - 1)
+        f"{n_term_frag}@1:{i+1}" for n_term_frag in n_term for i in range(sequence_length - 1)
     ]
     c_term_frags = [
-        c_term_frag + "@" + str(i) + ":" + str(sequence_length)
+        f"{c_term_frag}@{i}:{sequence_length}"
         for c_term_frag in c_term
         for i in range(2, sequence_length + 1)
     ]
 
-    charges_str = [
-        "(" + str(int(charge)) + ")" if int(charge) < 0 else "(+" + str(int(charge)) + ")"
-        for charge in charges
-    ]
+    charges_str = [f"({'+' if charge > 0 else ''}{charge})" for charge in charges]
 
     n_term_frags_with_charges = [
         n_term_frag + charge for n_term_frag in n_term_frags for charge in charges_str
@@ -246,8 +245,7 @@ def compute_theoretical_fragments(
         c_term_frag + charge for c_term_frag in c_term_frags for charge in charges_str
     ]
 
-    neutral_losses_str = ["[" + nl + "]" for nl in neutral_losses]
-    neutral_losses_str.append("")
+    neutral_losses_str = [f"[{nl}]"for nl in neutral_losses]
     n_term_frags_with_nl = [
         n_term_frag + nl for n_term_frag in n_term_frags_with_charges for nl in neutral_losses_str
     ]
@@ -255,21 +253,21 @@ def compute_theoretical_fragments(
         c_term_frag + nl for c_term_frag in c_term_frags_with_charges for nl in neutral_losses_str
     ]
 
-    internal_frags_with_nl = ["" for x in range(0)]
+    internal_frags_with_nl = ["" for _ in range(0)]  # typed empty list for Numba
 
     if internal:
         # internal fragments
         internal = [
-            n_term_ion + ":" + c_term_ion for n_term_ion in n_term_ions for c_term_ion in c_term_ions
+            f"{n_term_ion}:{c_term_ion}" for n_term_ion in n_term_ions for c_term_ion in c_term_ions
         ]
         internal_pos = [
-            str(i) + ":" + str(j)
+            f"{i}:{j}"
             for i in range(2, sequence_length)
             for j in range(2, sequence_length)
             if i <= j
         ]
         internal_frags = [
-            internal_ions + "@" + internal_positions
+            f"{internal_ions}@{internal_positions}"
             for internal_ions in internal
             for internal_positions in internal_pos
         ]
@@ -354,6 +352,7 @@ def match_fragments(exp_mz, theo_frag, tolerance: float):
     fragment_theoretical_code = []
     fragment_theoretical_mz = []
     fragment_theoretical_nmatch = []
+    other_annotations = []
 
     for i in exp_mz:
         d.setdefault(i, [])
@@ -361,7 +360,6 @@ def match_fragments(exp_mz, theo_frag, tolerance: float):
         while True:
             j = next(iter_2, (None, None))
 
-            # print(j)
             if j[1] is None:
                 break
             if abs(i - j[1]) <= tolerance:
@@ -376,26 +374,19 @@ def match_fragments(exp_mz, theo_frag, tolerance: float):
                     break
 
         fragment_theoretical_nmatch.append(len(d[i]))
-        if len(d[i]) > 0:
 
-            closest = None
-            for frag in d[i]:
-
-                if re_term.search(frag[0]):  # Prioritize annotation of terminal ions
-                    closest = frag
-                    break
-
-            if closest is None:
-                closest = min(
-                    d[i], key=lambda t: t[2]
-                )  # add the only the annotation with the lowest mass error
-
+        if d[i]:
+            # sort by terminal first, then by m/z difference
+            d[i].sort(key=lambda frag: (not bool(re_term.search(frag[0])), frag[2]))
+            closest = d[i][0]
             fragment_theoretical_code.append(closest[0])
             fragment_theoretical_mz.append(closest[1])
+            other_annotations.append([x[0] for x in d[i][1:]])
         else:
             fragment_theoretical_code.append(None)
             fragment_theoretical_mz.append(None)
+            other_annotations.append([])
 
         iter_2, last_match = tee(last_match)
 
-    return (fragment_theoretical_mz, fragment_theoretical_code, fragment_theoretical_nmatch)
+    return (fragment_theoretical_mz, fragment_theoretical_code, fragment_theoretical_nmatch, other_annotations)

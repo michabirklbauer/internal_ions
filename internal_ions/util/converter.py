@@ -116,6 +116,7 @@ class JSONConverter:
                     "modification": [],
                     "spectrum_id": [],
                     "ambiguity": [],
+                    "alternative_annotations": [],
                     "nr_idents_with_same_rank": []}
 
         # spectrum-centric dataframe structure
@@ -165,6 +166,7 @@ class JSONConverter:
                     fragment["modification"].append("")
                     fragment["spectrum_id"].append(self._get_spectrum_id(entry))
                     fragment["ambiguity"].append(self._get_ambiguity(entry["annotation"], i))
+                    fragment["alternative_annotations"].append("")
                     fragment["nr_idents_with_same_rank"].append(entry["nr_idents_with_same_rank"])
                 else:
                     start, end, ion_cap_start, ion_cap_end, charge, formula = self._parse_fragment_code(code)
@@ -186,6 +188,7 @@ class JSONConverter:
                     fragment["modification"].append(self._parse_modfication(entry["proforma"], start, end))
                     fragment["spectrum_id"].append(self._get_spectrum_id(entry))
                     fragment["ambiguity"].append(self._get_ambiguity(entry["annotation"], i))
+                    fragment["alternative_annotations"].append("; ".join(entry["alternative_annotations"][i]))
                     fragment["nr_idents_with_same_rank"].append(entry["nr_idents_with_same_rank"])
 
             # Spectrum-centric
