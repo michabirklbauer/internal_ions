@@ -127,7 +127,9 @@ def main(argv=None) -> None:
                         st.exception(e)
                         status_1 = 1
             if status_1 == 0:
+                st.session_state["sidebar_disabled"] = True
                 st.success("Fragannot finished successfully!")
+                st.rerun()
             else:
                 st.error("Fragannot stopped prematurely! See log for more information!")
         else:
@@ -135,6 +137,7 @@ def main(argv=None) -> None:
 
     ############################################################################
     if "dataframes" in st.session_state:
+        st.success("Fragannot finished successfully!")
         st.subheader("Results Preview", divider=DIV_COLOR)
         st.markdown("Fragment-centric")
         st.dataframe(st.session_state["dataframes"][0].head(10), use_container_width=True)
