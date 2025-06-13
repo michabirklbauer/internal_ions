@@ -34,6 +34,8 @@ def main_page():
 
 # side bar and main page loader
 def main(argv=None) -> None:
+    if "sidebar_disabled" not in st.session_state:
+        st.session_state["sidebar_disabled"] = False
 
     about_str = f"The server is running Fragment Explorer version {__version__}!"
 
@@ -63,7 +65,8 @@ def main(argv=None) -> None:
         st.number_input("Tolerance in Da:",
                         key="tolerance",
                         value=0.02,
-                        help="Fragment ion mass tolerance in Dalton.")
+                        help="Fragment ion mass tolerance in Dalton.",
+                        disabled=st.session_state["sidebar_disabled"])
 
         # ions
         st.markdown("**Ions**")
@@ -75,7 +78,8 @@ def main(argv=None) -> None:
                        default="b",
                        format_func=lambda x: fions_nterm_mapping[x],
                        key="selected_ions_nterm",
-                       help="The c-terminal ions considered by Fragannot and Fraggraph.")
+                       help="The c-terminal ions considered by Fragannot and Fraggraph.",
+                       disabled=st.session_state["sidebar_disabled"])
         fions_cterm_choices = ["x", "y", "z", "zdot", "z+1", "z+2", "z+3"]
         fions_cterm_mapping = {"x": "X ions", "y": "Y ions", "z": "Z ions", "zdot": "Zdot ions",
                                "z+1": "Z+1 ions", "z+2": "Z+2 ions", "z+3": "Z+3 ions"}
@@ -84,7 +88,8 @@ def main(argv=None) -> None:
                        default="y",
                        format_func=lambda x: fions_cterm_mapping[x],
                        key="selected_ions_cterm",
-                       help="The c-terminal ions considered by Fragannot and Fraggraph.")
+                       help="The c-terminal ions considered by Fragannot and Fraggraph.",
+                       disabled=st.session_state["sidebar_disabled"])
         st.markdown("Here are some common selections for HCD/ETD/etc...")
         st.dataframe(pd.DataFrame({"Method": ["HCD", "ETD"], "Ions": ["b, y", "c, z"]}),
                      hide_index=True,
@@ -97,36 +102,42 @@ def main(argv=None) -> None:
         deconvoluted_spectra = st.checkbox("Deconvoluted spectra",
                                            key="deconvoluted_spectra",
                                            value=False,
-                                           help="If spectra are already deconvoluted.")
+                                           help="If spectra are already deconvoluted.",
+                                           disabled=st.session_state["sidebar_disabled"])
 
         if not deconvoluted_spectra:
             # Add additional parameters here
             max_charge_auto = st.checkbox("Auto-select Max Charge",
                                           key="max_charge_auto",
                                           value=False,
-                                          help="Automatically determine the maximum charge state of the precursor to consider.")
+                                          help="Automatically determine the maximum charge state of the precursor to consider.",
+                                          disabled=st.session_state["sidebar_disabled"])
             if not max_charge_auto:
                 st.number_input("Max Charge:",
                                 key="max_charge",
                                 value=3,
                                 format="%d",
-                                help="Maximum charge state of the precursor to consider.")
+                                help="Maximum charge state of the precursor to consider.",
+                                disabled=st.session_state["sidebar_disabled"])
 
             max_isotope_auto = st.checkbox("Auto-select Max Isotope",
                                            key="max_isotope_auto",
                                            value=False,
-                                           help="Automatically determine the maximum isotope to consider.")
+                                           help="Automatically determine the maximum isotope to consider.",
+                                           disabled=st.session_state["sidebar_disabled"])
             if not max_isotope_auto:
                 st.number_input("Max Isotope:",
                                 key="max_isotope",
                                 value=5,
                                 format="%d",
-                                help="Maximum isotope to consider.")
+                                help="Maximum isotope to consider.",
+                                disabled=st.session_state["sidebar_disabled"])
 
             st.checkbox("Charge Reduction",
                         key="charge_reduction",
                         value=False,
-                        help="Charge reduction implies that a charge is lost upon fragmentation event. This is typically the case for electron-based fragmentation (e.g. ETD ECD).")
+                        help="Charge reduction implies that a charge is lost upon fragmentation event. This is typically the case for electron-based fragmentation (e.g. ETD ECD).",
+                        disabled=st.session_state["sidebar_disabled"])
 
     ############################################################################
         st.subheader("About the Project", divider=DIV_COLOR)

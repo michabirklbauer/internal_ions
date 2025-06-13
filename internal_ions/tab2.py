@@ -49,6 +49,7 @@ def main(argv=None) -> None:
                                                          "identifications_file": None,
                                                          "fragment_centric_csv": fragments_csv.name,
                                                          "spectrum_centric_csv": spectra_csv.name}
+                st.session_state["sidebar_disabled"] = True
                 st.rerun()
             else:
                 st.error("Uploaded .csv files are not in the right format! Did you switch up fragment- and spectra-centric .csv files?", icon="🚨")
