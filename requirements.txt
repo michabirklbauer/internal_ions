@@ -3,6 +3,7 @@ streamlit
 numpy
 pandas
 pyteomics
+pyteomics.cythonize
 argparse
 pprintpp
 spectrum_utils

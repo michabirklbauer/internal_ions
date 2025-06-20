@@ -2,6 +2,7 @@
 import math
 import itertools
 from collections import Counter
+from functools import lru_cache
 
 # Third-party Library Imports
 import numpy as np
@@ -12,7 +13,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
 import plotly.graph_objects as go
 import networkx as nx
-from pyteomics import mass, parser as pyteomics_parser
+from pyteomics import cmass, cparser as pyteomics_parser
 import brainpy as bp
 from ..util import constants
 import psm_utils
@@ -56,6 +57,16 @@ class FragGraph(nx.DiGraph):
         "title": "",
     }
 
+    # hydrogen mass
+    H = 1.00784
+    # electron mass
+    e = 0.00054857990946
+    # Proton mass
+    p = 1.007276466621
+    # loss mass
+    L = 0
+    N = 1.008664915
+
     def __init__(self, **kwargs):
         super().__init__()
 
@@ -76,7 +87,7 @@ class FragGraph(nx.DiGraph):
         self.min_intermediate_2_evidence = 1
         self.min_intermediate_1_evidence = 1
         self.min_it_threshold_factor = (
-            1  # Factor multiplied to the minimal itensity threshold
+            1  # Factor multiplied to the minimal intensity threshold
         )
         self.min_cosine_similarity = (
             0.7  # minimum cosine similarity to keep a intermediate 2 node
@@ -90,7 +101,7 @@ class FragGraph(nx.DiGraph):
         self.fake_peak_factor = 100  # "fake peaks" are set to min_it / fake_peak_factor
         self.min_frag_length = 3  # minimum fragment length to consider
         self.filter_charge = False
-        self.max_overlap_group_size = 250  # for overlaping group above this size, internal ions are discarded and only terminal ions are kept
+        self.max_overlap_group_size = 250  # for overlapping group above this size, internal ions are discarded and only terminal ions are kept
 
         # Constants
         self.spectrum_node_radius = 10055
@@ -125,7 +136,7 @@ class FragGraph(nx.DiGraph):
         #     print(f"{key}: {value}")
 
         # store I_1 nodes mz:
-        self.I_1_nodes_mz = [-1000]
+        self.I_1_nodes_mz = np.array([-math.inf])
 
         # matching success
         self.matching_success = pd.DataFrame(
@@ -226,20 +237,20 @@ class FragGraph(nx.DiGraph):
             self.filter_not_consistent_charge()
 
         self.filter_fragment_best_isotopic_fit()
-
         self.propagate_intensity()
         self.remove_non_leaf_branches()
         self.set_node_title_as_attributes()
         self.set_position_nodes()
 
         print("Graph generated")
+        return self.nodes, self.edges
 
     def add_node(self, node_id, parent=None, **kwargs):
         # Copy the default node attributes
         node_attributes = self.default_node_attributes.copy()
 
         # Update the node attributes with the parent attributes and create an edge
-        if parent != None:
+        if parent is not None:
             node_attributes.update(self.nodes[parent])
             self.add_edge(parent, node_id)
 
@@ -249,8 +260,8 @@ class FragGraph(nx.DiGraph):
         super().add_node(node_id, **node_attributes)
 
     def set_node_attributes(self, node_id, **kwargs):
-        super().nodes[node_id].update(kwargs)
-        self.nodes[node_id].update(kwargs)
+        super().nodes[node_id].update(kwargs)   # update node in parent class
+        self.nodes[node_id].update(kwargs)      # update node in child class
 
     def add_edge(self, parent, child, **kwargs):
         super().add_edge(parent, child, **kwargs)
@@ -268,53 +279,31 @@ class FragGraph(nx.DiGraph):
         """
         Returns the fragment code of a single fragment.
         """
-
         # if neutral lost empty
-        if len(neutral_loss) == 0:
-            NL_code = ""
-        else:
-            NL_code = "[" + str(neutral_loss) + "]"
+        NL_code = f"[{','.join(map(str, neutral_loss))}]" if neutral_loss else ""
 
         # if charge is not determined:
-        if charge == -1:
-            charge_code = ""
-        else:
-            charge_code = "(" + str(charge) + ")"
+        charge_code = f"({charge})" if charge != 1 else ""
 
         # if isotope is not determined:
-        if nth_isotope == -1:
-            isotope_code = ""
-        else:
-            isotope_code = "{" + str(nth_isotope) + "}"
+        isotope_code = f"({nth_isotope})" if nth_isotope != 1 else ""
 
-        frag_code = (
-            str(start_ioncap)
-            + ":"
-            + str(end_ioncap)
-            + "@"
-            + str(start_pos)
-            + ":"
-            + str(end_pos)
-            + charge_code
-            + NL_code
-            + isotope_code
-        )
-
-        return frag_code
+        return f"{start_ioncap}:{end_ioncap}@{start_pos}:{end_pos}{charge_code}{NL_code}{isotope_code}"
 
     def update_frag_code_charge(self, frag_code, charge=None):
         # from a frag_code corresponding to charge 0, return the frag_code corresponding to charged fragments
         if charge is None:
             raise ValueError("Charge must be specified")
         else:
-            return frag_code + "(" + str(charge) + ")"
+            # return frag_code + "(" + str(charge) + ")"
+            return f"{frag_code}({charge})"
 
     def update_frag_code_isotope(self, frag_code, isotope=None):
         # from a frag_code corresponding to isotope 0, return the frag_code corresponding to isotopic fragments
         if isotope is None:
             raise ValueError("Isotope must be specified")
         else:
-            return frag_code + "{" + str(isotope) + "}"
+            return f"{frag_code}{{{isotope}}}"
 
     def get_fragment_direction(self, start_pos, end_pos, peptide_sequence):
         """
@@ -342,7 +331,7 @@ class FragGraph(nx.DiGraph):
         sequence = []
         mods = []
         for aa, mod in peptidoform.parsed_sequence[
-            node_dict["start_pos"] : node_dict["end_pos"]
+                       node_dict["start_pos"]: node_dict["end_pos"]
         ]:
             sequence.append(aa)
             if not mod is None:
@@ -351,15 +340,17 @@ class FragGraph(nx.DiGraph):
 
         return self.sequence_to_isotopic_probabilities(sequence, max_isotope)
 
-    def sequence_to_isotopic_probabilities(self, sequence, max_isotope):
-        composition = mass.Composition(sequence=sequence)
+    @staticmethod
+    @lru_cache(maxsize=10000)
+    def sequence_to_isotopic_probabilities(sequence, max_isotope):
+        composition = cmass.Composition(sequence=sequence)
         theoretical_isotopic_cluster = bp.isotopic_variants(
             composition, npeaks=max_isotope, charge=0
         )
-        monoisotopic_mass = mass.calculate_mass(composition=composition, charge=0)
         iso_prob = [round(peak.intensity, 4) for peak in theoretical_isotopic_cluster]
 
         return iso_prob
+
 
     def get_fragment_theoretical_mz(
         self,
@@ -373,42 +364,24 @@ class FragGraph(nx.DiGraph):
         isotope,
     ):
         # peptide and modification mass
-        sequence = []
-        mods = []
-        for aa, mod in peptidoform.parsed_sequence[start - 1 : end]:
-            sequence.append(aa)
-            if not mod is None:
-                mods.extend([m.mass for m in mod])
-
-        formula = "".join(formula)
+        sequence, mods = zip(*peptidoform.parsed_sequence[start - 1 : end]) if peptidoform.parsed_sequence else ([], [])
 
         # mass AA sequence
         ps = pyteomics_parser.parse("".join(sequence), show_unmodified_termini=True)
-        P = mass.calculate_mass(parsed_sequence=ps)
-        # mass modifications
-        M = sum(mods)
+        P = cmass.calculate_mass(parsed_sequence=ps)
         # mass start ion cap
         SI = constants.ion_cap_delta_mass[start_ioncap]
         # mass end ion cap
         EI = constants.ion_cap_delta_mass[end_ioncap]
-        # hydrogen mass
-        H = 1.00784
-        # electron mass
-        e = 0.00054857990946
-        # Proton mass
-        p = 1.007276466621
-        # loss mass
-        # L = mass.calculate_mass(formula, absolute=True)
-        L = 0
-        # loss mass
-        n = 1.008664915
+        # mass modifications
+        M = sum([m.mass for mod in mods if mod is not None for m in mod])
 
         # Calculate fragment mass
         if charge == 0:
-            fragment_mass = P + M + SI + EI + (n * isotope) - L
+            fragment_mass = P + M + SI + EI + (self.N * isotope) - self.L
         else:
             fragment_mass = (
-                P + M + SI + EI + (p * (charge)) + (n * isotope) - L
+                P + M + SI + EI + (P * (charge)) + (self.N * isotope) - self.L
             ) / np.abs(charge)
 
         fragment_mass = round(float(fragment_mass), 10)
@@ -470,14 +443,87 @@ class FragGraph(nx.DiGraph):
             if j - i >= self.min_frag_length
         ]
 
-        # Total iterations for the loading bar
-        total_iterations = (
-            len(n_fragment_range) + len(c_fragment_range) + len(internal_fragment_range)
-        )
+        print("\033[91mAdding Nodes\033[0m")
+        # Add N fragments
+        for pos in n_fragment_range:
+            frag_code = self.get_frag_code(pos[0], pos[1])
+            frag_dir = self.get_fragment_direction(
+                pos[0], pos[1], peptidoform.sequence
+            )
+            frag_mz = int(
+                self.get_fragment_theoretical_mz(
+                    peptidoform, pos[0], pos[1], "t", "t", [], 0, 0
+                )
+            )  # theoretical mz of the fragment
 
-        with tqdm(total=total_iterations, desc="Adding Nodes") as pbar:
-            # Add N fragments
-            for pos in n_fragment_range:
+
+            node_id = str(f"{pos[0]}:{pos[1]}_{frag_mz}")
+            peptidoform_index = self.peptidoforms.index(peptidoform)
+            # if already exists, add the peptideform to the list of peptidoforms
+            if node_id in self.nodes:
+                self.set_node_attributes(
+                    node_id,
+                    peptidoforms=self.nodes[node_id]["peptidoforms"]
+                    + [peptidoform_index],
+                )
+                self.add_edge(parent, node_id)
+            else:
+                self.add_node(
+                    node_id,
+                    parent=parent,
+                    frag_codes=[frag_code],
+                    peptidoforms=[peptidoform_index],
+                    node_type="intermediate_0",
+                    color=self.colors["intermediate_0"],
+                    frag_dir=frag_dir,
+                    start_pos=pos[0],
+                    end_pos=pos[1],
+                )
+                self.add_intermediate_1_nodes(node_id, peptidoform)
+
+        # Add C fragments
+        for pos in c_fragment_range:
+            frag_code = self.get_frag_code(pos[0], pos[1])
+            frag_dir = self.get_fragment_direction(
+                pos[0], pos[1], peptidoform.sequence
+            )
+            frag_mz = int(
+                self.get_fragment_theoretical_mz(
+                    peptidoform, pos[0], pos[1], "t", "t", [], 0, 0
+                )
+            )  # theoretical mz of the fragment
+
+            node_id = str(f"{pos[0]}:{pos[1]}_{frag_mz}")
+            # get peptidoform index
+            peptidoform_index = self.peptidoforms.index(peptidoform)
+
+            # if already exists, add the peptideform to the list of peptidoforms and edge
+            if node_id in self.nodes:
+                self.set_node_attributes(
+                    node_id,
+                    peptidoforms=self.nodes[node_id]["peptidoforms"]
+                    + [peptidoform_index],
+                )
+                self.add_edge(parent, node_id)
+
+            else:
+                self.add_node(
+                    node_id,
+                    parent=parent,
+                    frag_codes=[frag_code],
+                    peptidoforms=[peptidoform_index],
+                    node_type="intermediate_0",
+                    color=self.colors["intermediate_0"],
+                    frag_dir=frag_dir,
+                    start_pos=pos[0],
+                    end_pos=pos[1],
+                )
+
+                self.add_intermediate_1_nodes(node_id, peptidoform)
+
+        # Add internal fragments (if allowed)
+        if not self.terminals_only:
+            for pos in internal_fragment_range:
                 frag_code = self.get_frag_code(pos[0], pos[1])
                 frag_dir = self.get_fragment_direction(
                     pos[0], pos[1], peptidoform.sequence
@@ -513,90 +559,6 @@ class FragGraph(nx.DiGraph):
 
                     self.add_intermediate_1_nodes(node_id, peptidoform)
 
-                    pbar.update(1)
-
-            # Add C fragments
-            for pos in c_fragment_range:
-                frag_code = self.get_frag_code(pos[0], pos[1])
-                frag_dir = self.get_fragment_direction(
-                    pos[0], pos[1], peptidoform.sequence
-                )
-                frag_mz = int(
-                    self.get_fragment_theoretical_mz(
-                        peptidoform, pos[0], pos[1], "t", "t", [], 0, 0
-                    )
-                )  # theoretical mz of the fragment
-
-                node_id = str(f"{pos[0]}:{pos[1]}_{frag_mz}")
-                # get peptidoform index
-                peptidoform_index = self.peptidoforms.index(peptidoform)
-
-                # if already exists, add the peptideform to the list of peptidoforms and edge
-                if node_id in self.nodes:
-                    self.set_node_attributes(
-                        node_id,
-                        peptidoforms=self.nodes[node_id]["peptidoforms"]
-                        + [peptidoform_index],
-                    )
-                    self.add_edge(parent, node_id)
-
-                else:
-                    self.add_node(
-                        node_id,
-                        parent=parent,
-                        frag_codes=[frag_code],
-                        peptidoforms=[peptidoform_index],
-                        node_type="intermediate_0",
-                        color=self.colors["intermediate_0"],
-                        frag_dir=frag_dir,
-                        start_pos=pos[0],
-                        end_pos=pos[1],
-                    )
-
-                    self.add_intermediate_1_nodes(node_id, peptidoform)
-
-                    pbar.update(1)
-
-            # Add internal fragments (if allowed)
-            if not self.terminals_only:
-                for pos in internal_fragment_range:
-                    frag_code = self.get_frag_code(pos[0], pos[1])
-                    frag_dir = self.get_fragment_direction(
-                        pos[0], pos[1], peptidoform.sequence
-                    )
-                    frag_mz = int(
-                        self.get_fragment_theoretical_mz(
-                            peptidoform, pos[0], pos[1], "t", "t", [], 0, 0
-                        )
-                    )  # theoretical mz of the fragment
-
-                    node_id = str(f"{pos[0]}:{pos[1]}_{frag_mz}")
-                    peptidoform_index = self.peptidoforms.index(peptidoform)
-                    # if already exists, add the peptideform to the list of peptidoforms
-                    if node_id in self.nodes:
-                        self.set_node_attributes(
-                            node_id,
-                            peptidoforms=self.nodes[node_id]["peptidoforms"]
-                            + [peptidoform_index],
-                        )
-                        self.add_edge(parent, node_id)
-                    else:
-                        self.add_node(
-                            node_id,
-                            parent=parent,
-                            frag_codes=[frag_code],
-                            peptidoforms=[peptidoform_index],
-                            node_type="intermediate_0",
-                            color=self.colors["intermediate_0"],
-                            frag_dir=frag_dir,
-                            start_pos=pos[0],
-                            end_pos=pos[1],
-                        )
-
-                        self.add_intermediate_1_nodes(node_id, peptidoform)
-
-                        pbar.update(1)
-
     # ---------------------------------------------------------------------------- #
 
     def add_intermediate_1_nodes(self, parent, peptidoform):
@@ -631,11 +593,11 @@ class FragGraph(nx.DiGraph):
                 ioncaps[0],
                 ioncaps[1],
             )
-
             # Is their an already existing intermediate 1 node with an mz within msms_tol:
 
             # Get the intermediate 1 nodes with the closest mz
-            closest_mz = min(self.I_1_nodes_mz, key=lambda x: abs(x - frag_mz))
+            idx_closest_mz = np.argmin(np.abs(self.I_1_nodes_mz - frag_mz)) # SK
+            closest_mz = self.I_1_nodes_mz[idx_closest_mz]
 
             # if the mz within the tolerance
             is_within_tol = False
@@ -651,7 +613,7 @@ class FragGraph(nx.DiGraph):
             # is whiting the tolerance, add the frag_code and an edge to the existing intermediate 1 node
             if is_within_tol:
                 # if internal over terminal is not allowed, check if the intermediate 1 node is terminal
-                if self.internal_over_terminal == False:
+                if not self.internal_over_terminal:
                     if (
                         frag_dir == "I"
                         and self.nodes[str(closest_mz)]["frag_dir"] != "I"
@@ -682,7 +644,7 @@ class FragGraph(nx.DiGraph):
                 )
 
                 # add mz to the list of I_1 nodes
-                self.I_1_nodes_mz.append(frag_mz)
+                self.I_1_nodes_mz = np.append(self.I_1_nodes_mz, frag_mz)
 
                 self.add_intermediate_2_nodes(str(frag_mz), peptidoform)
 
@@ -699,7 +661,6 @@ class FragGraph(nx.DiGraph):
             charge_lookup = self.get_charge_lookup(charge_prob, length)
 
         # annotate the intermediate_1 node with the charge lookup
-        node_ids = []
         for charge in charge_lookup:
             frag_mz = self.update_framgent_theoretical_mz_charge(
                 self.nodes[parent]["mz"], charge
@@ -952,35 +913,33 @@ class FragGraph(nx.DiGraph):
 
     def set_position_nodes(self):
 
-        with tqdm(total=len(list(self.nodes.keys())), desc="Setting node positions (Vis)") as pbar:
-            for node in self.nodes:
-                if self.nodes[node]["node_type"] == "leaf":
-                    x, y = self.point_on_circle_mz(
-                        self.nodes[node]["mz"], self.circle_radius_leaf
+        print("\033[91mSetting node postions (Vis)\033[0m")
+        for node in self.nodes:
+            if self.nodes[node]["node_type"] == "leaf":
+                x, y = self.point_on_circle_mz(
+                    self.nodes[node]["mz"], self.circle_radius_leaf
+                )
+                self.set_node_attributes(node, x=x, y=y, physics=False)
+            if self.nodes[node]["node_type"] == "root":
+                self.set_node_attributes(node, x=0, y=0, physics=False)
+            if self.nodes[node]["node_type"] == "intermediate_0":
+                if self.nodes[node]["frag_dir"] == "I":
+                    x, y = self.point_on_circle_length(
+                        self.nodes[node]["end_pos"] - self.nodes[node]["start_pos"],
+                        self.circle_radius_intermediate_0_I,
                     )
-                    self.set_node_attributes(node, x=x, y=y, physics=False)
-                if self.nodes[node]["node_type"] == "root":
-                    self.set_node_attributes(node, x=0, y=0, physics=False)
-                if self.nodes[node]["node_type"] == "intermediate_0":
-                    if self.nodes[node]["frag_dir"] == "I":
-                        x, y = self.point_on_circle_length(
-                            self.nodes[node]["end_pos"] - self.nodes[node]["start_pos"],
-                            self.circle_radius_intermediate_0_I,
-                        )
-                    elif self.nodes[node]["frag_dir"] == "N":
-                        x, y = self.point_on_circle_length(
-                            self.nodes[node]["end_pos"] - self.nodes[node]["start_pos"],
-                            self.circle_radius_intermediate_0_N,
-                        )
-                    elif self.nodes[node]["frag_dir"] == "C":
-                        x, y = self.point_on_circle_length(
-                            self.nodes[node]["end_pos"] - self.nodes[node]["start_pos"],
-                            self.circle_radius_intermediate_0_C,
-                        )
+                elif self.nodes[node]["frag_dir"] == "N":
+                    x, y = self.point_on_circle_length(
+                        self.nodes[node]["end_pos"] - self.nodes[node]["start_pos"],
+                        self.circle_radius_intermediate_0_N,
+                    )
+                elif self.nodes[node]["frag_dir"] == "C":
+                    x, y = self.point_on_circle_length(
+                        self.nodes[node]["end_pos"] - self.nodes[node]["start_pos"],
+                        self.circle_radius_intermediate_0_C,
+                    )
 
-                    self.set_node_attributes(node, x=x, y=y, physics=False)
-
-                pbar.update(1)
+                self.set_node_attributes(node, x=x, y=y, physics=False)
 
     def add_spectrum_peaks_to_graph(self, radius):
         for mz, intensity in zip(self.mzs, self.its):
@@ -1049,15 +1008,14 @@ class FragGraph(nx.DiGraph):
             dfs(node)
 
         # Step 3: Remove all unmarked nodes and their branches except node of type intermediate_0
-        with tqdm(total=len(list(self.nodes.keys())), desc="removing non annotated fragments") as pbar:
-            for node in list(self.nodes.keys()):
-                if node not in visited and self.nodes[node]["node_type"] not in [
-                    "root",
-                    "peak",
-                    "peak_viz",
-                ]:
-                    self.remove_node(node)
-                pbar.update(1)
+        print("\033[91mremoving non annotated fragnts\033[0m")
+        for node in list(self.nodes.keys()):
+            if node not in visited and self.nodes[node]["node_type"] not in [
+                "root",
+                "peak",
+                "peak_viz",
+            ]:
+                self.remove_node(node)
 
     def get_overlapping_leaf_nodes(self, leaf_node_code):
         # from a leaf node code get all the nodes linked to the same peak node
@@ -1091,10 +1049,8 @@ class FragGraph(nx.DiGraph):
 
     def set_node_title_as_attributes(self):
         for node in self.nodes:
-            str_attr = ""
-            for key, value in self.nodes[node].items():
-                str_attr += key + "=" + str(value) + "\n"
-
+            attributes = [f"{key}={value}" for key, value in self.nodes[node].items()]
+            str_attr = "\n".join(attributes)
             self.set_node_attributes(node, title=str_attr)
 
     def node_size_from_intensity(self, intensity):
@@ -1107,101 +1063,95 @@ class FragGraph(nx.DiGraph):
         # propagate intensities from peaks to I0
 
         # for each peak node
-        with tqdm(total=len(self.nodes), desc="Propagating Intensity (peak nodes)") as pbar:
-            for node in self.nodes:
-                parents = list(self.predecessors(node))
-                if len(parents) != 0:
-                    if (
-                        self.nodes[node]["node_type"] == "peak"
-                        and self.nodes[parents[0]]["node_type"] == "leaf"
-                    ):
-                        I2_weights = []
-                        I2_weights = [
-                            self.nodes[list(self.predecessors(parent))[0]]["weight"]
-                            for parent in parents
-                        ]
+        print("\033[91mPropagating Intensity (peak nodes)\033[0m")
+        for node in self.nodes:
+            parents = list(self.predecessors(node))     # get parent nodes
+            if len(parents) != 0:       # check if has parent nodes
+                if (
+                    self.nodes[node]["node_type"] == "peak"
+                    and self.nodes[parents[0]]["node_type"] == "leaf"
+                ):
+                    I2_weights = [
+                        self.nodes[list(self.predecessors(parent))[0]]["weight"]    # gets weight of parents
+                        for parent in parents
+                    ]
 
-                        # normalize weights to sum to 1 and set leaf node weight
-                        I2_weights = [i / sum(I2_weights) for i in I2_weights]
-                        for leaf_node, weight in zip(parents, I2_weights):
-                            self.set_node_attributes(leaf_node, weight=weight)
-                pbar.update(1)
+                    # normalize weights to sum to 1 and set leaf node weight
+                    I2_weights = [i / sum(I2_weights) for i in I2_weights]
+                    for leaf_node, weight in zip(parents, I2_weights):
+                        self.set_node_attributes(leaf_node, weight=weight)      # sets normalized weight of leaf nodes
 
         # set the intensity size of the leaf nodes
-        with tqdm(total=len(self.nodes), desc="Propagating Intensity (leaf nodes)") as pbar:
-            for node in self.nodes:
-                if self.nodes[node]["node_type"] == "leaf":
-                    # set leaf intensity from connected peak node
-                    if len(list(self.successors(node))) > 0:
-                        intensity = (
-                            self.nodes[list(self.successors(node))[0]]["intensity"]
-                            * self.nodes[node]["weight"]
-                        )
-                        self.set_node_attributes(
-                            node,
-                            size=self.node_size_from_intensity(intensity),
-                            intensity=intensity,
-                        )
-                    else:
-                        self.set_node_attributes(
-                            node, size=self.node_size_from_intensity(0), intensity=0
-                        )
-                pbar.update(1)
+        print("\033[91mPropagating Intensity (leaf nodes)\033[0m")
+        for node in self.nodes:
+            if self.nodes[node]["node_type"] == "leaf":     # gets leaf nodes
+                # set leaf intensity from connected peak node
+                if len(list(self.successors(node))) > 0:    # has descendant(=peak node) ?
+                    intensity = (
+                        self.nodes[list(self.successors(node))[0]]["intensity"]     # calc intensity of node
+                        * self.nodes[node]["weight"]
+                    )
+                    self.set_node_attributes(
+                        node,
+                        size=self.node_size_from_intensity(intensity),
+                        intensity=intensity,
+                    )
+                else:
+                    self.set_node_attributes(
+                        node, size=self.node_size_from_intensity(0), intensity=0    # if no descandant set intensity = 0
+                    )
 
         # propagate the intensity from leaf nodes to intermediate_2 nodes
-        with tqdm(total=len(self.nodes), desc="Propagating Intensity (I2 nodes)") as pbar:
-            for node in self.nodes:
-                if self.nodes[node]["node_type"] == "leaf":
-                    intensity = self.nodes[node]["intensity"]
-                    # propagate the intensity to intermediate_2 nodes
-                    for parent in self.predecessors(node):
-                        intensity = self.nodes[parent]["intensity"] + intensity
-                        # add intensity to intermediate_2 node
-                        self.set_node_attributes(
-                            parent,
-                            size=self.node_size_from_intensity(intensity),
-                            intensity=intensity,
-                        )
-                pbar.update(1)
+        print("\033[91mPropagating Intensity (I2 nodes)\033[0m")
+        for node in self.nodes:
+            if self.nodes[node]["node_type"] == "leaf":
+                intensity = self.nodes[node]["intensity"]
+                # propagate the intensity to intermediate_2 nodes
+                for parent in self.predecessors(node):
+                    intensity = self.nodes[parent]["intensity"] + intensity
+                    # add intensity to intermediate_2 node
+                    self.set_node_attributes(
+                        parent,
+                        size=self.node_size_from_intensity(intensity),
+                        intensity=intensity,
+                    )
 
         # propagate the intensity from intermediate_2 nodes to intermediate_1 nodes
-        with tqdm(total=len(self.nodes), desc="Propagating Intensity (I1 nodes)") as pbar:
-            for node in self.nodes:
-                if self.nodes[node]["node_type"] == "intermediate_2":
-                    intensity = self.nodes[node]["intensity"]
-                    # propagate the intensity to intermediate_1 nodes
-                    for parent in self.predecessors(node):
-                        intensity = self.nodes[parent]["intensity"] + intensity
-                        # add intensity to intermediate_1 node
+        print("\033[91mPropagating Intensity (I1 nodes)\033[0m")
+        for node in self.nodes:
+            if self.nodes[node]["node_type"] == "intermediate_2":
+                intensity = self.nodes[node]["intensity"]
+                # propagate the intensity to intermediate_1 nodes
+                for parent in self.predecessors(node):
+                    intensity = self.nodes[parent]["intensity"] + intensity
+                    # add intensity to intermediate_1 node
+                    self.set_node_attributes(
+                        parent,
+                        size=self.node_size_from_intensity(intensity),
+                        intensity=intensity,
+                    )
+
+        # propagate the intensity from intermediate_1 nodes to intermediate_0 nodes
+        print("\033[91mPropagating Intensity (I0 nodes)\033[0m")
+        for node in self.nodes:
+            if self.nodes[node]["node_type"] == "intermediate_1":
+                intensity = self.nodes[node]["intensity"]
+                # propagate the intensity to intermediate_0 nodes
+
+                # get the number of parents
+                parents = list(self.predecessors(node))
+                if parents:
+                    for parent in parents:
+                        # add intensity to intermediate_0 node
+                        intensity = self.nodes[parent]["intensity"] + (
+                            intensity / len(parents)    # split intensity equally on IO nodes
+                        )
+                        # add intensity to intermediate_0 node
                         self.set_node_attributes(
                             parent,
                             size=self.node_size_from_intensity(intensity),
                             intensity=intensity,
                         )
-                pbar.update(1)
-
-        # propagate the intensity from intermediate_1 nodes to intermediate_0 nodes
-        with tqdm(total=len(self.nodes), desc="Propagating Intensity (I0 nodes)") as pbar:
-            for node in self.nodes:
-                if self.nodes[node]["node_type"] == "intermediate_1":
-                    intensity = self.nodes[node]["intensity"]
-                    # propagate the intensity to intermediate_0 nodes
-
-                    # get the number of parents
-                    parents = list(self.predecessors(node))
-                    if len(parents) != 0:
-                        for parent in parents:
-                            # add intensity to intermediate_0 node
-                            intensity = self.nodes[parent]["intensity"] + (
-                                intensity / len(parents)
-                            )
-                            # add intensity to intermediate_0 node
-                            self.set_node_attributes(
-                                parent,
-                                size=self.node_size_from_intensity(intensity),
-                                intensity=intensity,
-                            )
-                pbar.update(1)
 
     def compute_cosine_similarity(self):
         for node in self.nodes:
@@ -1411,9 +1361,8 @@ class FragGraph(nx.DiGraph):
         for length in range(1, len(self.peptidoforms[0].sequence)):
             if length not in accepted_charge.keys():
                 # get the closest length
-                closest_length = min(
-                    accepted_charge.keys(), key=lambda x: abs(x - length)
-                )
+                idx_closest_length = np.argmin(np.abs(accepted_charge.keys() - length))
+                closest_length = self.I_1_nodes_mz[idx_closest_length]
                 accepted_charge[length] = accepted_charge[closest_length]
 
         # print(accepted_charge)
@@ -1509,9 +1458,9 @@ class FragGraph(nx.DiGraph):
             # raise ValueError("weights do not sum to 1")
 
         # Calculate the best combination of candidate distributions using the optimal weights
-        best_combination = np.sum(optimal_weights[:, np.newaxis] * candidates, axis=0)
+        # best_combination = np.sum(optimal_weights[:, np.newaxis] * candidates, axis=0)
 
-        # print resuls:
+        # print results:
 
         # print("target distribution:", target)
         # print("candidate distributions:", candidates)
@@ -1523,19 +1472,14 @@ class FragGraph(nx.DiGraph):
     def get_overlaping_fragment_groups(self):
         """returns groups of intermediate_2 nodes whose leaf are connected to the same peak node"""
 
-        # create a copy of the graph by creating a new networkx object:
+        valid_types = {"intermediate_2", "leaf", "peak"}
+        relevant_nodes = [
+            node for node in self.nodes
+            if self.nodes[node]["node_type"] in valid_types
+        ]
 
-        graph = nx.Graph()
-        graph.add_nodes_from(self.nodes)
-        graph.add_edges_from(self.edges)
-
-        # remove all nodes that are not intermediate_2 or leaf or peak nodes
-        for node in self.nodes:
-            if self.nodes[node]["node_type"] not in ["intermediate_2", "leaf", "peak"]:
-                graph.remove_node(node)
-
-        # get all connected components
-        groups = list(nx.connected_components(graph))
+        subgraph = self.subgraph(relevant_nodes)
+        groups = list(nx.weakly_connected_components(subgraph))
 
         # # keep only intermediate_2 nodes in connected components
         # for g in groups:
@@ -1557,161 +1501,159 @@ class FragGraph(nx.DiGraph):
         total_removed = 0
 
         # with loading bar
-        with tqdm(total=len(groups), desc="Filtering Nodes") as pbar:
-            for g in groups:
-                if len(g) > 1:
-                    # get the target distribution from the peak node
-                    peak_nodes = []
-                    peak_nodes_mzs = []
-                    peak_nodes_its = []
+        print("\033[91mFiltering Nodes\033[0m")
+        for g in groups:
+            if len(g) > 1:
+                # get the target distribution from the peak node
+                peak_nodes = []
+                peak_nodes_mzs = []
+                peak_nodes_its = []
 
-                    for node in g:
-                        if self.nodes[node]["node_type"] == "peak":
-                            peak_nodes.append(node)
-                            peak_nodes_mzs.append(float(self.nodes[node]["mz"]))
-                            peak_nodes_its.append(self.nodes[node]["intensity"])
+                for node in g:
+                    if self.nodes[node]["node_type"] == "peak":
+                        peak_nodes.append(node)
+                        peak_nodes_mzs.append(float(self.nodes[node]["mz"]))
+                        peak_nodes_its.append(self.nodes[node]["intensity"])
 
-                    if len(peak_nodes) == 0:
-                        continue
+                if len(peak_nodes) == 0:
+                    continue
 
-                    # order the three lists by increasing values in peak_nodes_mzs
-                    peak_nodes_mzs, peak_nodes, peak_nodes_its = zip(
-                        *sorted(zip(peak_nodes_mzs, peak_nodes, peak_nodes_its))
+                # order the three lists by increasing values in peak_nodes_mzs
+                peak_nodes_mzs, peak_nodes, peak_nodes_its = zip(
+                    *sorted(zip(peak_nodes_mzs, peak_nodes, peak_nodes_its))
+                )
+                # convert intensities value to distribution
+                peak_nodes_probs = [i / sum(peak_nodes_its) for i in peak_nodes_its]
+
+                # print("sorted peak node mzs:", peak_nodes_mzs)
+                # print("target distribution:", peak_nodes_probs)
+
+                # get the candidate distributions from the intermediate_2 nodes
+                candidate_distributions = []
+                candidate_distributions_parent_nodes = []
+                for node in g:
+                    if self.nodes[node]["node_type"] == "intermediate_2":
+                        candidate_distributions_parent_nodes.append(node)
+                        # get peak node connected to the intermediate_2 node (iterate over leaf and get peaks)
+                        connected_peak_nodes = []
+                        connected_leaf_nodes = []
+                        for leaf_node in self.successors(node):
+                            connected_leaf_nodes.append(leaf_node)
+                            for peak_node in self.successors(leaf_node):
+                                if peak_node not in connected_peak_nodes:
+                                    connected_peak_nodes.append(peak_node)
+
+                        # for each peak nodes get the theoretical probability of the fragment if there is one else appedn 0:
+                        candidate_distribution = [0 for i in range(len(peak_nodes))]
+                        i = 0
+                        for peak_node in peak_nodes:
+                            if peak_node in connected_peak_nodes:
+                                # find the connected leaf node
+                                for leaf_from_peak in self.predecessors(peak_node):
+                                    if leaf_from_peak in connected_leaf_nodes:
+                                        candidate_distribution[i] = self.nodes[
+                                            leaf_from_peak
+                                        ]["isotope_prob"]
+                            i += 1
+                        # standardize the distribution to sum to 1
+                        if sum(candidate_distribution) != 0:
+                            candidate_distribution = [
+                                i / sum(candidate_distribution)
+                                for i in candidate_distribution
+                            ]
+                        candidate_distributions.append(candidate_distribution)
+
+                # for i in range(len(candidate_distributions)):
+                #     print(
+                #         candidate_distributions_parent_nodes[i],
+                #         "---->",
+                #         candidate_distributions[i],
+                #     )
+
+                # find the best combination of candidate distributions
+                # print(len(g), " overlapping fragments")
+
+                if len(g) < self.max_overlap_group_size:
+                    best_weights = self.find_best_combination(
+                        peak_nodes_probs, candidate_distributions
                     )
-                    # convert intensities value to distribution
-                    peak_nodes_probs = [i / sum(peak_nodes_its) for i in peak_nodes_its]
 
-                    # print("sorted peak node mzs:", peak_nodes_mzs)
-                    # print("target distribution:", peak_nodes_probs)
+                    # print("best combination (by weights):", best_weights)
 
-                    # get the candidate distributions from the intermediate_2 nodes
-                    candidate_distributions = []
-                    candidate_distributions_parent_nodes = []
-                    for node in g:
-                        if self.nodes[node]["node_type"] == "intermediate_2":
-                            candidate_distributions_parent_nodes.append(node)
-                            # get peak node connected to the intermediate_2 node (iterate over leaf and get peaks)
-                            connected_peak_nodes = []
-                            connected_leaf_nodes = []
-                            for leaf_node in self.successors(node):
-                                connected_leaf_nodes.append(leaf_node)
-                                for peak_node in self.successors(leaf_node):
-                                    if peak_node not in connected_peak_nodes:
-                                        connected_peak_nodes.append(peak_node)
+                    # remove nodes that are where the weight is 0
+                    # add calculated weight to intermediate_2 nodes
+                    to_remove = []
+                    for i in range(len(best_weights)):
+                        if best_weights[i] == 0:
+                            to_remove.append(
+                                candidate_distributions_parent_nodes[i]
+                            )
 
-                            # for each peak nodes get the theoretical probability of the fragment if there is one else appedn 0:
-                            candidate_distribution = [0 for i in range(len(peak_nodes))]
-                            i = 0
-                            for peak_node in peak_nodes:
-                                if peak_node in connected_peak_nodes:
-                                    # find the connected leaf node
-                                    for leaf_from_peak in self.predecessors(peak_node):
-                                        if leaf_from_peak in connected_leaf_nodes:
-                                            candidate_distribution[i] = self.nodes[
-                                                leaf_from_peak
-                                            ]["isotope_prob"]
-                                i += 1
-                            # standardize the distribution to sum to 1
-                            if sum(candidate_distribution) != 0:
-                                candidate_distribution = [
-                                    i / sum(candidate_distribution)
-                                    for i in candidate_distribution
-                                ]
-                            candidate_distributions.append(candidate_distribution)
-
-                    # for i in range(len(candidate_distributions)):
-                    #     print(
-                    #         candidate_distributions_parent_nodes[i],
-                    #         "---->",
-                    #         candidate_distributions[i],
-                    #     )
-
-                    # find the best combination of candidate distributions
-                    # print(len(g), " overlapping fragments")
-
-                    if len(g) < self.max_overlap_group_size:
-                        best_weights = self.find_best_combination(
-                            peak_nodes_probs, candidate_distributions
-                        )
-
-                        # print("best combination (by weights):", best_weights)
-
-                        # remove nodes that are where the weight is 0
-                        # add calculated weight to intermediate_2 nodes
-                        to_remove = []
-                        for i in range(len(best_weights)):
-                            if best_weights[i] == 0:
-                                to_remove.append(
-                                    candidate_distributions_parent_nodes[i]
-                                )
-
-                                # remove child nodes (leaf nodes)
-                                # print("parent node distribution:", candidate_distributions_parent_nodes[i])
-                                for leaf_node in self.successors(
-                                    candidate_distributions_parent_nodes[i]
-                                ):
-                                    # print("removing leaf node:", leaf_node)
-                                    to_remove.append(leaf_node)
-                                    # remove peak nodes if only one leaf node is connected to it
-                                    for peak_node in self.successors(leaf_node):
-                                        if len(list(self.predecessors(peak_node))) == 1:
-                                            to_remove.append(peak_node)
-                                            # remove succesor nodes of peak nodes
-                                            to_remove.append(
-                                                list(self.successors(peak_node))[0]
-                                            )
-                            if best_weights[i] != 0:
-                                self.set_node_attributes(
-                                    candidate_distributions_parent_nodes[i],
-                                    weight=best_weights[i],
-                                )
-                        # print(len(to_remove), " nodes have been removed based on best isotopic fit")
-
-                        # remove the nodes from the graph
-                        for node in to_remove:
-                            self.remove_node(node)
-                            total_removed += 1
-
-                    else:  # the group is too big, use the average of the candidate distributions
-                        print(
-                            "length of group is too large, removing internal fragments"
-                        )
-
-                        # remove candidate distribution and node for internal fragments
-                        to_remove = []
-                        for i in range(len(candidate_distributions)):
-                            if (
-                                self.nodes[candidate_distributions_parent_nodes[i]][
-                                    "frag_dir"
-                                ]
-                                == "I"
+                            # remove child nodes (leaf nodes)
+                            # print("parent node distribution:", candidate_distributions_parent_nodes[i])
+                            for leaf_node in self.successors(
+                                candidate_distributions_parent_nodes[i]
                             ):
-                                to_remove.append(
-                                    candidate_distributions_parent_nodes[i]
-                                )
+                                # print("removing leaf node:", leaf_node)
+                                to_remove.append(leaf_node)
+                                # remove peak nodes if only one leaf node is connected to it
+                                for peak_node in self.successors(leaf_node):
+                                    if len(list(self.predecessors(peak_node))) == 1:
+                                        to_remove.append(peak_node)
+                                        # remove succesor nodes of peak nodes
+                                        to_remove.append(
+                                            list(self.successors(peak_node))[0]
+                                        )
+                        if best_weights[i] != 0:
+                            self.set_node_attributes(
+                                candidate_distributions_parent_nodes[i],
+                                weight=best_weights[i],
+                            )
+                    # print(len(to_remove), " nodes have been removed based on best isotopic fit")
 
-                                # remove child nodes (leaf nodes)
-                                # print("parent node distribution:", candidate_distributions_parent_nodes[i])
-                                for leaf_node in self.successors(
-                                    candidate_distributions_parent_nodes[i]
-                                ):
-                                    # print("removing leaf node:", leaf_node)
-                                    to_remove.append(leaf_node)
-                                    # remove peak nodes if only one leaf node is connected to it
-                                    for peak_node in self.successors(leaf_node):
-                                        if len(list(self.predecessors(peak_node))) == 1:
-                                            to_remove.append(peak_node)
-                                            # remove succesor nodes of peak nodes
-                                            to_remove.append(
-                                                list(self.successors(peak_node))[0]
-                                            )
+                    # remove the nodes from the graph
+                    for node in to_remove:
+                        self.remove_node(node)
+                        total_removed += 1
 
-                        # remove the nodes from the graph
-                        for node in to_remove:
-                            self.remove_node(node)
-                            total_removed += 1
+                else:  # the group is too big, use the average of the candidate distributions
+                    print(
+                        "length of group is too large, removing internal fragments"
+                    )
 
-                pbar.update(1)
+                    # remove candidate distribution and node for internal fragments
+                    to_remove = []
+                    for i in range(len(candidate_distributions)):
+                        if (
+                            self.nodes[candidate_distributions_parent_nodes[i]][
+                                "frag_dir"
+                            ]
+                            == "I"
+                        ):
+                            to_remove.append(
+                                candidate_distributions_parent_nodes[i]
+                            )
+
+                            # remove child nodes (leaf nodes)
+                            # print("parent node distribution:", candidate_distributions_parent_nodes[i])
+                            for leaf_node in self.successors(
+                                candidate_distributions_parent_nodes[i]
+                            ):
+                                # print("removing leaf node:", leaf_node)
+                                to_remove.append(leaf_node)
+                                # remove peak nodes if only one leaf node is connected to it
+                                for peak_node in self.successors(leaf_node):
+                                    if len(list(self.predecessors(peak_node))) == 1:
+                                        to_remove.append(peak_node)
+                                        # remove succesor nodes of peak nodes
+                                        to_remove.append(
+                                            list(self.successors(peak_node))[0]
+                                        )
+
+                    # remove the nodes from the graph
+                    for node in to_remove:
+                        self.remove_node(node)
+                        total_removed += 1
 
         print(total_removed, " nodes have been removed based on best isotopic fit")
 
@@ -1725,7 +1667,7 @@ class FragGraph(nx.DiGraph):
         row_names = []
         for ion_type in self.start_ioncaps_types + self.end_ioncaps_types:
             intensity_matrix[ion_type] = [
-                0 for i in range(len(self.peptidoform.sequence) + 1)
+                0 for _ in range(len(self.peptidoform.sequence) + 1)
             ]
             row_names.append(ion_type)
 
@@ -1736,7 +1678,7 @@ class FragGraph(nx.DiGraph):
         row_names = []
         for charge in range(1, self.max_charge + 1):
             charge_length_matrix[charge] = [
-                0 for i in range(len(self.peptidoform.sequence) + 1)
+                0 for _ in range(len(self.peptidoform.sequence) + 1)
             ]
             row_names.append(charge)
 
@@ -1748,7 +1690,7 @@ class FragGraph(nx.DiGraph):
         row_names = []
         for charge in range(1, self.max_charge + 1):
             charge_length_matrix_intern[charge] = [
-                0 for i in range(len(self.peptidoform.sequence) + 1)
+                0 for _ in range(len(self.peptidoform.sequence) + 1)
             ]
             row_names.append(charge)
 
@@ -1869,10 +1811,10 @@ class FragGraph(nx.DiGraph):
         # Assuming a Gaussian distribution, you can calculate the probabilities using the cumulative distribution function
         from scipy.stats import norm
 
-        probabilities = norm.cdf(predictions)
+        # probabilities = norm.cdf(predictions)
 
         # Reshape the probabilities to match the input meshgrid shape
-        probabilities = probabilities.reshape(X_new.shape)
+        # probabilities = probabilities.reshape(X_new.shape)
 
         #print("Probabilities:")
         #print(probabilities)
@@ -2409,14 +2351,9 @@ class FragGraph(nx.DiGraph):
             list_df.append(df)
 
         #concatenate rows
-
         df = pd.concat(list_df)
 
-
-
-
         return df
-
 
 
     def get_leaf_nodes_linked_to_peak(self, peak_node_code):
@@ -2453,7 +2390,6 @@ class FragGraph(nx.DiGraph):
                 # get the leaf nodes
                 leaf_nodes = self.get_leaf_nodes_linked_to_peak(node)
 
-
                 # get the mz and intensity
                 mz = self.nodes[node]["mz"]
                 intensity = self.nodes[node]["intensity"]
@@ -2469,7 +2405,6 @@ class FragGraph(nx.DiGraph):
                         terminal += 1
                     if self.nodes[leaf_node]["frag_dir"] == "I":
                         internal += 1
-
 
                 df = pd.concat(
                     [
