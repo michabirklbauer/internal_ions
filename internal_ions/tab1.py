@@ -26,7 +26,8 @@ def main(argv=None) -> None:
         "Upload a spectrum file (we assume all spectra are MS2-level):",
         key="uploaded_spectrum_file",
         type=["mgf"],
-        help="Upload a spectrum file to be analyzed in .mgf format.")
+        help="Upload a spectrum file to be analyzed in .mgf format.",
+        disabled=st.session_state["sidebar_disabled"])
 
     spectrum_file = None
     if uploaded_spectrum_file is not None:
@@ -39,14 +40,16 @@ def main(argv=None) -> None:
     identifications_file = st.file_uploader("Upload an identification file:",
                                             key="identifications_file",
                                             type=None,  # ["mzid"],
-                                            help="Upload a identification file that contains PSMs of the spectrum file in .mzid format.")
+                                            help="Upload a identification file that contains PSMs of the spectrum file in .mzid format.",
+                                            disabled=st.session_state["sidebar_disabled"])
 
     identifications_file_format = st.selectbox("Select the file format of the identifications file:",
                                                key="identifications_file_format",
                                                options=['infer'] + SUPPORTED_FILETYPES,
                                                index=0,
                                                placeholder="None selected!",
-                                               help="Select the file format of the identifications file, supported options are based on psm_utils.")
+                                               help="Select the file format of the identifications file, supported options are based on psm_utils.",
+                                               disabled=st.session_state["sidebar_disabled"])
 
     if identifications_file is not None and identifications_file_format is not None:
         if spectrum_file is not None:
@@ -69,15 +72,17 @@ def main(argv=None) -> None:
 
     charges_str = st.text_input("Charges to consider [comma delimited]:",
                                 value="+1",
-                                help="The charges to consider for fragment ions. Multiple entries should be delimited by commas!")
+                                help="The charges to consider for fragment ions. Multiple entries should be delimited by commas!",
+                                disabled=st.session_state["sidebar_disabled"])
     st.session_state["charges"] = [charge.strip() for charge in charges_str.split(",")]
 
     losses_str = st.text_input("Neutral losses to consider [comma delimited]",
                                value="H2O",
-                               help="Neutral losses to consider for fragment ions. Multiple entries should be delimited by commas!")
+                               help="Neutral losses to consider for fragment ions. Multiple entries should be delimited by commas!",
+                               disabled=st.session_state["sidebar_disabled"])
     st.session_state["losses"] = [loss.strip() for loss in losses_str.split(",")]
 
-    st.checkbox("Deisotope spectra", key="deisotope", value=True, help="Deisotope uploaded spectra or not.")
+    st.checkbox("Deisotope spectra", key="deisotope", value=True, help="Deisotope uploaded spectra or not.", disabled=st.session_state["sidebar_disabled"])
 
     ############################################################################
     st.subheader("Annotation", divider=DIV_COLOR)
@@ -85,11 +90,23 @@ def main(argv=None) -> None:
     l1, center_button, r1 = st.columns(3)
 
     with center_button:
+        if st.session_state["sidebar_disabled"]:
+            enable_sidebar = st.button("Re-enable upload and parameter selection!",
+                                       type="secondary",
+                                       use_container_width=True)
+            if enable_sidebar:
+                st.session_state["sidebar_disabled"] = False
+                st.rerun()
         run_analysis = st.button("Load files and run Fragannot!",
                                  type="primary",
                                  use_container_width=True)
 
     if run_analysis:
+        st.session_state["sidebar_disabled"] = True
+        st.session_state["run_fragannot"] = True
+        st.rerun()
+
+    if "run_fragannot" in st.session_state and st.session_state["run_fragannot"]:
         cond1 = spectrum_file is not None
         cond2 = st.session_state.identifications_file is not None
         cond3 = st.session_state.identifications_file_format is not None
@@ -128,10 +145,13 @@ def main(argv=None) -> None:
                         status_1 = 1
             if status_1 == 0:
                 st.success("Fragannot finished successfully!")
+                st.session_state["run_fragannot"] = False
             else:
                 st.error("Fragannot stopped prematurely! See log for more information!")
+                st.session_state["run_fragannot"] = False
         else:
             st.error("You need to specify a spectrum AND identifications file AND the file format!")
+            st.session_state["run_fragannot"] = False
 
     ############################################################################
     if "dataframes" in st.session_state:
