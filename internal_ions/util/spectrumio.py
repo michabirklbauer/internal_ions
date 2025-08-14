@@ -100,7 +100,7 @@ def read_spectra(file: SpectrumFile) -> Dict[int, Dict]:
         spectrum_dict = {}
         spectrum_dict["spectrum"] = spectrum
         spectrum_dict["precursor"] = spectrum["params"]["pepmass"]
-        spectrum_dict["charge"] = spectrum["params"]["charge"]
+        spectrum_dict["charge"] = spectrum["params"].get("charge", 0)
         spectrum_dict["rt"] = spectrum["params"].get("rtinseconds", 0.0)
         spectrum_dict["max_intensity"] = float(max(spectrum["intensity array"]))
         peaks = {}

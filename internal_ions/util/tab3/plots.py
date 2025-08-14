@@ -35,11 +35,7 @@ def plot_consensus_spectrum(intensity_values, mz_values, coverage) -> go.Figure:
     return fig
 
 
-def plot_spectra_chromatogram(spectra: dict) -> pd.DataFrame:
-    """
-    Returns a DataFrame with the following columns:
-    "scan_nr", "precursor", "charge", "rt", "max_intensity", "peaks"
-    """
+def plot_spectra_chromatogram(spectra: dict):
 
     fig = go.Figure()
 
@@ -47,11 +43,14 @@ def plot_spectra_chromatogram(spectra: dict) -> pd.DataFrame:
     intensity_array = [spectrum["precursor"][1] for spectrum in spectra.values() if spectrum["precursor"][1]]
 
     # if no values, return empty figure
-    if len(intensity_array) <= 0:
-        return fig
+    # if len(intensity_array) <= 0:
+    #     return fig
 
-    min_intensity = min(intensity_array)
-    max_intensity = max(intensity_array)
+    if intensity_array:
+        min_intensity = min(intensity_array)
+        max_intensity = max(intensity_array)
+    else:
+        min_intensity, max_intensity = 0, 1
     print("min/max intensity: ", min_intensity, max_intensity)
     colorscale = [[0, 'blue'], [1, 'red']]  # Define your desired colorscale
 
@@ -61,10 +60,13 @@ def plot_spectra_chromatogram(spectra: dict) -> pd.DataFrame:
         max_intensity = 1
 
     for scan_nr, spectrum in spectra.items():
-        if spectrum["precursor"][1] is None:
-            continue
+        # if spectrum["precursor"][1] is None:
+        #     continue
         intensity = spectrum["precursor"][1]
-        color = (intensity - min_intensity) / (max_intensity - min_intensity)  # Calculate the color value based on intensity
+        if intensity is None:
+            color = 0
+        else:
+            color = (intensity - min_intensity) / (max_intensity - min_intensity)  # Calculate the color value based on intensity
 
         fig.add_trace(go.Scatter(
             x=[spectrum["rt"]],
